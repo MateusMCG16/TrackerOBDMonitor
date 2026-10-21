@@ -20,7 +20,7 @@ class ObdRepository(
     val queryTrace: StateFlow<List<QueryTrace>> = mutableTrace.asStateFlow()
     private var job: Job? = null
     @Volatile private var active: Elm327Client? = null
-    private var meters = Sensor.entries.associateWith { FrequencyMeter() }
+    @Volatile private var meters = Sensor.entries.associateWith { FrequencyMeter() }
     private val ticker = scope.launch { while (isActive) { tick(); delay(100) } }
 
     private fun replace(initial: MonitorState, work: suspend CoroutineScope.() -> Unit) {
@@ -92,6 +92,8 @@ class ObdRepository(
     private fun record(sensor: Sensor, result: PidResult, now: Long, latency: Long, slot: Long) {
         mutableTrace.update { (it + QueryTrace(sensor, now, latency, result is PidResult.Value, (result as? PidResult.Missing)?.reason)).takeLast(120) }
         if (result is PidResult.Value) meters.getValue(sensor).sample(now)
+        // Read before update: the CAS lambda may re-run, and hz() mutates the window.
+        val measuredHz = meters.getValue(sensor).hz(now)
         mutable.update { state ->
             val old = state.telemetry.sensor(sensor)
             val reading = when (result) {
@@ -100,7 +102,7 @@ class ObdRepository(
             }
             val data = old.copy(reading = reading, latencyMs = latency, queries = old.queries + 1,
                 validSamples = old.validSamples + if (result is PidResult.Value) 1 else 0,
-                hz = meters.getValue(sensor).hz(now))
+                hz = measuredHz)
             state.copy(phase = if (state.phase == ConnectionPhase.DEMO) ConnectionPhase.DEMO
                 else if (result is PidResult.Value) ConnectionPhase.RECEIVING else state.phase,
                 telemetry = state.telemetry.withSensor(sensor, data).copy(slotMs = slot, nowMs = now),
@@ -110,11 +112,14 @@ class ObdRepository(
     }
     private fun tick() {
         val now = clock.nowMs()
+        val window = meters
+        val rpmHz = window.getValue(Sensor.RPM).hz(now)
+        val speedHz = window.getValue(Sensor.SPEED).hz(now)
         mutable.update { state ->
             val t = state.telemetry
             val anyFresh = Sensor.entries.any { t.sensor(it).reading.availability(now) == Availability.VALID }
-            state.copy(telemetry = t.copy(nowMs = now, rpm = t.rpm.copy(hz = meters.getValue(Sensor.RPM).hz(now)),
-                speed = t.speed.copy(hz = meters.getValue(Sensor.SPEED).hz(now))),
+            state.copy(telemetry = t.copy(nowMs = now, rpm = t.rpm.copy(hz = rpmHz),
+                speed = t.speed.copy(hz = speedHz)),
                 phase = if (state.phase == ConnectionPhase.RECEIVING && !anyFresh) ConnectionPhase.WAITING else state.phase)
         }
     }

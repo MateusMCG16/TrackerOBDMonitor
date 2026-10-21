@@ -33,15 +33,21 @@ data class MonitorState(
     val telemetry: VehicleTelemetry = VehicleTelemetry(), val warnings: List<String> = emptyList()
 )
 
-/** Counts only actual successful responses in a rolling two-second window. */
+/**
+ * Counts only actual successful responses in a rolling two-second window.
+ * Synchronized: the polling worker samples while the UI ticker reads, and
+ * nothing in this module guarantees both run on the same thread.
+ */
 class FrequencyMeter(private val windowMs: Long = 2000) {
+    private val lock = Any()
     private val timestamps = ArrayDeque<Long>()
-    fun sample(nowMs: Long) { timestamps.addLast(nowMs); trim(nowMs) }
+    fun sample(nowMs: Long) = synchronized(lock) { timestamps.addLast(nowMs); trim(nowMs) }
+    /** Call under [lock]. */
     private fun trim(nowMs: Long) { while (timestamps.isNotEmpty() && nowMs - timestamps.first() > windowMs) timestamps.removeFirst() }
-    fun hz(nowMs: Long): Double {
+    fun hz(nowMs: Long): Double = synchronized(lock) {
         trim(nowMs)
         if (timestamps.size < 2) return 0.0
         val elapsed = nowMs - timestamps.first()
-        return if (elapsed > 0) (timestamps.size - 1) * 1000.0 / elapsed else 0.0
+        if (elapsed > 0) (timestamps.size - 1) * 1000.0 / elapsed else 0.0
     }
 }
