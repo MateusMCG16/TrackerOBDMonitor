@@ -55,7 +55,8 @@ class Elm327ClientTest {
         val transport = FakeTransport { "41 0C 00 00" } // No prompt.
         val client = Elm327Client(transport)
         assertFailsWith<ElmTimeoutException> { client.execute(ElmCommand.RPM) }
-        assertEquals(2000L, testScheduler.currentTime)
+        // A data PID waits out the ELM327's own 5 s 'response pending' extension.
+        assertEquals(6000L, testScheduler.currentTime)
         assertTrue(transport.closed)
         assertFailsWith<IllegalStateException> { client.execute(ElmCommand.SPEED) }
         assertEquals(listOf("010C"), transport.writes)
@@ -75,7 +76,8 @@ class Elm327ClientTest {
         assertTrue(transport.closed)
     }
     @Test fun commandAllowlistContainsOnlyPermittedOperations() {
-        assertEquals(setOf("ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATSP0", "0100", "010C", "010D"), ElmCommand.entries.map { it.wire }.toSet())
+        assertEquals(setOf("ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATSP0", "ATDPN", "0100", "010C", "010D", "010C0D"),
+            ElmCommand.entries.map { it.wire }.toSet())
     }
     @Test fun timeoutDuringWriteAlsoClosesTransport() = runTest {
         val base = FakeTransport()

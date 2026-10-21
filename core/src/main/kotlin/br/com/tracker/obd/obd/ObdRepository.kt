@@ -10,6 +10,9 @@ data class QueryTrace(val sensor: Sensor, val atMs: Long, val latencyMs: Long, v
 
 fun interface TransportConnector { suspend fun connect(address: String): ElmTransport }
 
+/** Not an IOException: it ends the combined mode, never the Bluetooth session. */
+private class CombinedUnsupported : Exception()
+
 class ObdRepository(
     private val scope: CoroutineScope, private val connector: TransportConnector,
     private val clock: MonotonicClock = SystemMonotonicClock
@@ -58,19 +61,7 @@ class ObdRepository(
                 }
                 mutable.update { it.copy(message = "Aguardando leituras válidas…") }
                 val session = client
-                ObdPollingScheduler(clock).run(supported, { sensor ->
-                    val started = clock.nowMs()
-                    try {
-                        ObdPidParser.parse(sensor, session.execute(if (sensor == Sensor.RPM) ElmCommand.RPM else ElmCommand.SPEED))
-                    } catch (e: IOException) {
-                        val finished = clock.nowMs()
-                        record(sensor, PidResult.Missing(e.message ?: "Erro de comunicação"), finished,
-                            finished - started, mutable.value.telemetry.slotMs)
-                        throw e
-                    }
-                }) { sample ->
-                    record(sample.sensor, sample.result, sample.finishedMs, sample.latencyMs, sample.slotMs)
-                }
+                poll(session, chooseTargets(session, supported), singleTargets(supported))
                 return@replace
             } catch (e: CancellationException) { throw e }
               catch (e: SecurityException) {
@@ -83,6 +74,47 @@ class ObdRepository(
                 if (!retry) return@replace
             } finally { client?.close(); if (active === client) active = null }
             delay(1000L shl attempt)
+        }
+    }
+    private fun singleTargets(supported: Set<Sensor>) = Sensor.entries.filter { it in supported }
+        .map { if (it == Sensor.RPM) PollTarget.RPM else PollTarget.SPEED }
+
+    /** CAN answers both PIDs in one message, so a cycle costs one transaction instead of two. */
+    private suspend fun chooseTargets(client: Elm327Client, supported: Set<Sensor>): List<PollTarget> {
+        val single = singleTargets(supported)
+        if (single.size < 2) return single
+        return if (ObdPidParser.isCanProtocol(client.execute(ElmCommand.PROTOCOL_NUMBER)))
+            listOf(PollTarget.BOTH) else single
+    }
+    private suspend fun poll(session: Elm327Client, preferred: List<PollTarget>, fallback: List<PollTarget>) {
+        var targets = preferred
+        while (true) {
+            var misses = 0
+            try {
+                ObdPollingScheduler(clock).run(targets, { target ->
+                    val started = clock.nowMs()
+                    val results = try {
+                        ObdPidParser.parseAll(session.execute(target.command), target.sensors).toList()
+                    } catch (e: IOException) {
+                        val finished = clock.nowMs()
+                        for (sensor in target.sensors) record(sensor, PidResult.Missing(e.message ?: "Erro de comunicação"),
+                            finished, finished - started, mutable.value.telemetry.slotMs)
+                        throw e
+                    }
+                    if (results.none { it.second is PidResult.Value }) misses++ else misses = 0
+                    // A clone may simply ignore a multi-PID request: step down without dropping the link.
+                    if (misses >= 3 && targets.singleOrNull() == PollTarget.BOTH) throw CombinedUnsupported()
+                    results
+                }) { sample ->
+                    for ((sensor, result) in sample.results)
+                        record(sensor, result, sample.finishedMs, sample.latencyMs, sample.slotMs)
+                }
+                return
+            } catch (e: CombinedUnsupported) {
+                targets = fallback
+                mutable.update { it.copy(warnings = it.warnings +
+                    "Adaptador não respondeu a 010C0D; consultando um PID por vez.") }
+            }
         }
     }
     fun demo() = replace(MonitorState(phase = ConnectionPhase.DEMO, deviceName = "Simulador local",

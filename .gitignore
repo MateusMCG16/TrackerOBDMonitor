@@ -6,3 +6,7 @@ local.properties
 *.jks
 .kotlin/
 *.apk
+
+# Material de referência e de teste, fora do repositório
+*.pdf
+*.mp4

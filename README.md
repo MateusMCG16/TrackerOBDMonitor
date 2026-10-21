@@ -45,7 +45,9 @@ O botão de configurações Bluetooth permite parear/ativar o rádio. Ao retorna
 
 ## Polling: alvo de 5 Hz por sensor
 
-- Um único worker alterna **010C / 010D**. Com ambos suportados, o espaçamento inicial é de **100 ms entre requisições**, ou **200 ms por PID**. Com um único sensor suportado, o espaçamento inicial é 200 ms.
+- Em CAN, um único worker pede **010C0D**: uma transação devolve RPM e velocidade juntos, no mesmo instante, com espaçamento inicial de **200 ms** — 5 Hz para os dois sensores. O protocolo é identificado por **ATDPN** logo após o `0100`.
+- Fora de CAN o worker alterna **010C / 010D**, com espaçamento inicial de **100 ms entre requisições**, ou **200 ms por PID**. Com um único sensor suportado, o espaçamento inicial é 200 ms.
+- Três respostas seguidas sem nenhum dado válido ao pedido combinado fazem o aplicativo voltar a um PID por vez **sem derrubar a conexão**, registrando um aviso. Clones que ignoram requisições multi-PID continuam funcionando.
 - Cada transação é protegida por `Mutex`: escrever comando + CR, ler até `>`, só então liberar a próxima transação. Não há produtor de consultas, fila de polling, paralelismo de comandos ou recuperação em rajadas.
 - O relógio é monotônico (`System.nanoTime`), independente de alterações no horário do telefone.
 - Após cada resposta, o intervalo passa a considerar `ceil(latência × 1,15) + 10 ms`. Se necessário ele cresce imediatamente; com respostas rápidas, recupera-se em passos de 5 ms até o mínimo. Respostas sem dados válidos aumentam o intervalo em 50%, com limite de 5 s entre comandos.
@@ -61,14 +63,14 @@ O botão de configurações Bluetooth permite parear/ativar o rádio. Ao retorna
 A inicialização aguarda `>` após cada comando:
 
 ```text
-ATZ → ATE0 → ATL0 → ATS0 → ATH0 → ATSP0 → 0100
+ATZ → ATE0 → ATL0 → ATS0 → ATH0 → ATSP0 → 0100 → ATDPN
 ```
 
 `0100` verifica a máscara de suporte antes de qualquer leitura. Consulta-se exclusivamente os PIDs anunciados. Se nenhum dos dois estiver disponível, a configuração termina com erro, sem inventar suporte.
 
-O parser aceita espaços, ausência de espaços, eco, CR/LF, `SEARCHING...` e respostas de mais de uma ECU. A primeira resposta válida do PID solicitado é usada; a máscara de suporte combina as ECUs que responderem. Cabeçalhos devem estar desligados: uma falha de `ATH0` ou `ATSP0` interrompe a configuração. Clones que recusarem `ATE0`, `ATL0` ou `ATS0` geram avisos; o parser continua tolerando eco e formatação. Não há suposição de que um clone azul anuncie corretamente todas as funções de um ELM327 original.
+O parser aceita espaços, ausência de espaços, eco, CR/LF, `SEARCHING...` e respostas de mais de uma ECU. Bytes NUL (`00`) que o ELM327 pode inserir no fluxo são descartados, como o datasheet orienta; sem isso uma leitura válida seria recusada. Respostas multilinha ISO 15765 — linha de comprimento seguida de `0:` / `1:` — são remontadas antes da leitura, e uma resposta pode conter vários PIDs. A primeira resposta válida do PID solicitado é usada; a máscara de suporte combina as ECUs que responderem. Cabeçalhos devem estar desligados: uma falha de `ATH0` ou `ATSP0` interrompe a configuração. Clones que recusarem `ATE0`, `ATL0` ou `ATS0` geram avisos; o parser continua tolerando eco e formatação. Não há suposição de que um clone azul anuncie corretamente todas as funções de um ELM327 original.
 
-Timeouts: conexão RFCOMM 12 s por tentativa, `ATZ` 5 s, demais AT e leituras 2 s, suporte `0100` 15 s (inclui seleção automática de protocolo). A conexão usa o UUID SPP `00001101-0000-1000-8000-00805F9B34FB`; se a conexão segura falhar por I/O, tenta a API RFCOMM insegura documentada com o mesmo UUID. Não usa reflexão, canais RFCOMM fixos ou comandos CAN arbitrários.
+Timeouts: conexão RFCOMM 12 s por tentativa, `ATZ` 5 s, demais comandos AT 2 s, suporte `0100` 15 s (inclui seleção automática de protocolo) e leituras de PID 6 s. As leituras têm prazo maior porque uma resposta *response pending* (`7F xx 78`) faz o próprio ELM327 esperar até 5 s, e outros 5 s a cada nova: um prazo menor encerraria uma sessão saudável enquanto o adaptador ainda aguarda legitimamente. A conexão usa o UUID SPP `00001101-0000-1000-8000-00805F9B34FB`; se a conexão segura falhar por I/O, tenta a API RFCOMM insegura documentada com o mesmo UUID. Não usa reflexão, canais RFCOMM fixos ou comandos CAN arbitrários.
 
 **Um timeout de transação encerra o socket.** A sessão não envia outro PID nem reutiliza bytes atrasados. Falhas de I/O permitem até três reconexões adicionais, com esperas de 1, 2 e 4 s. Cada nova sessão repete configuração e suporte. O usuário pode cancelar a qualquer momento. Erros de configuração e permissão não são repetidos automaticamente.
 
@@ -98,7 +100,7 @@ core/src/test/kotlin/br/com/tracker/obd/
 
 ## Segurança e limites de validação
 
-A lista fechada `ElmCommand` contém somente os seis comandos AT de configuração, `0100`, `010C` e `010D`. Não há ECU write, limpeza de falhas, atuadores, fuzzing, CAN bruto, terminal ou comando personalizado. Não existe permissão `INTERNET` no manifesto.
+A lista fechada `ElmCommand` contém somente os seis comandos AT de configuração, `ATDPN` (que apenas lê o número do protocolo), `0100`, `010C`, `010D` e `010C0D`. Não há ECU write, limpeza de falhas, atuadores, fuzzing, CAN bruto, terminal ou comando personalizado. Não existe permissão `INTERNET` no manifesto.
 
 Não interaja com o aplicativo durante a condução. Compatibilidade com a Tracker 2022 e o clone ELM327 específico precisa ser confirmada no veículo: os testes automatizados usam transportes simulados e não substituem essa verificação. O app mostra somente as medições recebidas, sem afirmar frequência garantida, precisão de instrumentos originais ou limite real do motor.
 
