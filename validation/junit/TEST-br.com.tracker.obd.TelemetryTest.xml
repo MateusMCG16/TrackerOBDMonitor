@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="br.com.tracker.obd.TelemetryTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-21T21:21:34.683Z" hostname="991463ee9caf" time="0.194">
+  <properties/>
+  <testcase name="demoGeneratesFiveSamplesEachPerSecondAndReaches100" classname="br.com.tracker.obd.TelemetryTest" time="0.029"/>
+  <testcase name="measuredHzDecaysAndStopsWhenResponsesStop" classname="br.com.tracker.obd.TelemetryTest" time="0.008"/>
+  <testcase name="zeroValidMissingAndStaleAreDistinct" classname="br.com.tracker.obd.TelemetryTest" time="0.002"/>
+  <testcase name="repositoryChecksSupportAndOnlyPollsSupportedPid" classname="br.com.tracker.obd.TelemetryTest" time="0.044"/>
+  <testcase name="reconnectIsBoundedAndCancelable" classname="br.com.tracker.obd.TelemetryTest" time="0.03"/>
+  <testcase name="repeatedMissingReadingsRetainLastMeasurementAndBecomeStale" classname="br.com.tracker.obd.TelemetryTest" time="0.028"/>
+  <testcase name="demoNeverTouchesBluetoothAndSwitchingCancelsIt" classname="br.com.tracker.obd.TelemetryTest" time="0.037"/>
+  <testcase name="backingOffNeverMakesAnOldMeasurementFreshAgain" classname="br.com.tracker.obd.TelemetryTest" time="0.01"/>
+  <testcase name="freshnessThresholdAccountsForAdaptiveInterval" classname="br.com.tracker.obd.TelemetryTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

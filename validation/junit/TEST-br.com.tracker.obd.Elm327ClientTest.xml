@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="br.com.tracker.obd.Elm327ClientTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-21T21:21:34.473Z" hostname="991463ee9caf" time="0.172">
+  <properties/>
+  <testcase name="cancellationClosesPendingTransport" classname="br.com.tracker.obd.Elm327ClientTest" time="0.026"/>
+  <testcase name="timeoutDuringWriteAlsoClosesTransport" classname="br.com.tracker.obd.Elm327ClientTest" time="0.006"/>
+  <testcase name="timeoutClosesAndPreventsNextCommand" classname="br.com.tracker.obd.Elm327ClientTest" time="0.004"/>
+  <testcase name="criticalUnsupportedCommandStopsInitialization" classname="br.com.tracker.obd.Elm327ClientTest" time="0.017"/>
+  <testcase name="disconnectPropagatesAndCloses" classname="br.com.tracker.obd.Elm327ClientTest" time="0.015"/>
+  <testcase name="oversizedResponseClosesInsteadOfGrowingWithoutBound" classname="br.com.tracker.obd.Elm327ClientTest" time="0.069"/>
+  <testcase name="commandAllowlistContainsOnlyPermittedOperations" classname="br.com.tracker.obd.Elm327ClientTest" time="0.001"/>
+  <testcase name="initializationOrderAndOptionalCloneCommands" classname="br.com.tracker.obd.Elm327ClientTest" time="0.013"/>
+  <testcase name="concurrentCallersAreSerializedUntilPrompt" classname="br.com.tracker.obd.Elm327ClientTest" time="0.016"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="br.com.tracker.obd.ObdPidParserTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-21T21:21:34.651Z" hostname="991463ee9caf" time="0.028">
+  <properties/>
+  <testcase name="stableFirstEcuSelection" classname="br.com.tracker.obd.ObdPidParserTest" time="0.001"/>
+  <testcase name="rejectsWrongPidTruncatedGarbageAndEcho" classname="br.com.tracker.obd.ObdPidParserTest" time="0.009"/>
+  <testcase name="noDataAndElmErrorsAreMissing" classname="br.com.tracker.obd.ObdPidParserTest" time="0.002"/>
+  <testcase name="missingSupportNeverAssumesSupport" classname="br.com.tracker.obd.ObdPidParserTest" time="0.001"/>
+  <testcase name="supportMaskAndMultipleEcus" classname="br.com.tracker.obd.ObdPidParserTest" time="0.007"/>
+  <testcase name="parsesSpeedAndZero" classname="br.com.tracker.obd.ObdPidParserTest" time="0.002"/>
+  <testcase name="parsesSpacedAndCompactRpm" classname="br.com.tracker.obd.ObdPidParserTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

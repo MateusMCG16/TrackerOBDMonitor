@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="br.com.tracker.obd.ObdPollingSchedulerTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-21T21:21:30.239Z" hostname="991463ee9caf" time="4.227">
+  <properties/>
+  <testcase name="twoSensorsEachHaveFiveHzWithNoOverlap" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="4.163"/>
+  <testcase name="noDataBacksOffAndCancellationStopsFurtherRequests" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.012"/>
+  <testcase name="oneSupportedSensorRemainsAtFiveHz" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.011"/>
+  <testcase name="overdueWorkIsNeverReplayed" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.009"/>
+  <testcase name="frequencyRecoversGraduallyAfterSlowResponse" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.013"/>
+  <testcase name="slowAdapterReducesFrequencyWithoutQueueOrCatchup" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.011"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
