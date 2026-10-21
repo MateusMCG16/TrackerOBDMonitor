@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Regras equivalentes para Android 11 e anteriores, onde android:dataExtractionRules
+     não se aplica. O backup já está desligado por android:allowBackup="false". -->
+<full-backup-content>
+    <exclude domain="root" path="." />
+    <exclude domain="external" path="." />
+</full-backup-content>

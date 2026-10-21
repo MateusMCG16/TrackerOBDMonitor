@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- O aplicativo não persiste nada: sem banco, preferências ou arquivos de leitura.
+     Nada a restaurar em nuvem nem a transferir entre aparelhos. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

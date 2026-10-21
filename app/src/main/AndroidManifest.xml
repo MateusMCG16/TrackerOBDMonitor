@@ -4,7 +4,9 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <application android:theme="@style/Theme.Tracker" android:label="Tracker OBD Monitor"
-        android:icon="@drawable/ic_tracker" android:allowBackup="false" android:supportsRtl="true">
+        android:icon="@drawable/ic_tracker" android:allowBackup="false" android:supportsRtl="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
