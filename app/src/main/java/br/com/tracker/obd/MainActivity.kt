@@ -55,7 +55,8 @@ class MainActivity : ComponentActivity() {
                 }
                 Surface {
                     DashboardScreen(state, link, onConnect = { showConnection = true; refresh() },
-                        onDemo = model::demo, onDisconnect = model::disconnect)
+                        onDemo = model::demo, onDisconnect = model::disconnect,
+                        onReadDtc = model::readDtc)
                     if (showConnection) ConnectionScreen(devices, error,
                         onSelect = { showConnection = false; model.connect(it) }, onRefresh = refresh,
                         onSettings = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },

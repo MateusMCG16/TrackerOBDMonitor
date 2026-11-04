@@ -76,8 +76,19 @@ class Elm327ClientTest {
         assertTrue(transport.closed)
     }
     @Test fun commandAllowlistContainsOnlyPermittedOperations() {
-        assertEquals(setOf("ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATSP0", "ATDPN", "0100", "010C", "010D", "010C0D"),
-            ElmCommand.entries.map { it.wire }.toSet())
+        assertEquals(setOf("ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATSP0", "ATDPN", "0100", "010C", "010D",
+            "010C0D", "0101", "03"), ElmCommand.entries.map { it.wire }.toSet())
+    }
+    @Test fun noCommandWritesToTheEcu() {
+        // Mode 04 erases codes, freeze frames and readiness monitors; the other modes
+        // above 0A are requests the vehicle acts on. None of them belongs in a read-only app.
+        val written = setOf("04", "08", "2F", "31", "2E", "14", "85")
+        for (command in ElmCommand.entries) {
+            assertFalse(command.wire in written, command.wire)
+            // A bare mode digit pair is a request; anything that is not AT must be mode 01/03/09.
+            if (!command.wire.startsWith("AT"))
+                assertTrue(command.wire.take(2) in setOf("01", "03", "09"), command.wire)
+        }
     }
     @Test fun timeoutDuringWriteAlsoClosesTransport() = runTest {
         val base = FakeTransport()

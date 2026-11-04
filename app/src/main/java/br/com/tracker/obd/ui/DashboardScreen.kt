@@ -16,7 +16,7 @@ import br.com.tracker.obd.bluetooth.BluetoothLink
 import br.com.tracker.obd.ui.components.*
 import br.com.tracker.obd.ui.theme.*
 
-@Composable fun DashboardScreen(state: MonitorState, link: BluetoothLink, onConnect: () -> Unit, onDemo: () -> Unit, onDisconnect: () -> Unit) {
+@Composable fun DashboardScreen(state: MonitorState, link: BluetoothLink, onConnect: () -> Unit, onDemo: () -> Unit, onDisconnect: () -> Unit, onReadDtc: () -> Unit) {
     val active = state.phase !in setOf(ConnectionPhase.DISCONNECTED, ConnectionPhase.ERROR)
     val live = state.phase in setOf(ConnectionPhase.RECEIVING, ConnectionPhase.WAITING, ConnectionPhase.DEMO)
     val t = state.telemetry
@@ -55,6 +55,7 @@ import br.com.tracker.obd.ui.theme.*
                     OutlinedButton(onClick = onDemo, modifier = Modifier.weight(1f)) { Text("Modo demo") }
                 }
             }
+            DtcPanel(state.dtc, t.nowMs, live, onReadDtc, Modifier.fillMaxWidth())
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("META 5 Hz / SENSOR", color = Cyan, fontSize = 11.sp, letterSpacing = 1.sp)
                 Text("${t.slotMs} ms entre consultas • sem requisições simultâneas", color = Muted, fontSize = 11.sp)

@@ -30,7 +30,8 @@ enum class ConnectionPhase { DISCONNECTED, CONNECTING, CONNECTED, WAITING, RECEI
 data class MonitorState(
     val phase: ConnectionPhase = ConnectionPhase.DISCONNECTED,
     val deviceName: String? = null, val message: String? = null, val attempt: Int = 0,
-    val telemetry: VehicleTelemetry = VehicleTelemetry(), val warnings: List<String> = emptyList()
+    val telemetry: VehicleTelemetry = VehicleTelemetry(), val warnings: List<String> = emptyList(),
+    val dtc: DtcReport = DtcReport()
 )
 
 /**

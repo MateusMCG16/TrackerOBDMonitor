@@ -23,18 +23,20 @@ object ObdPidParser {
         candidate.takeIf { it.startsWith(prefix) && it.length >= prefix.length + bytes * 2 && it.isHexFrame() }
     }
     /**
-     * The data bytes of a mode 01 reply, reassembling the ISO 15765 multiline form
-     * (a length line, then 0: / 1: … frames) that a multi-PID request can produce.
+     * The data bytes of every reply to [mode], reassembling the ISO 15765 multiline form
+     * (a length line, then 0: / 1: … frames) that a multi-PID or multi-DTC answer produces.
+     * With several modules answering, a single-line reply per module yields several bodies.
      */
-    private fun payload(raw: String): String? {
+    internal fun bodies(raw: String, mode: String): List<String> {
         val lines = lines(raw).map { it.removePrefix("SEARCHING...") }.filter { it.isNotEmpty() }
         val ordered = lines.filter { it.length > 2 && it[1] == ':' && it[0] in HEX }
-        if (ordered.isEmpty()) return lines.firstOrNull { it.startsWith("41") && it.isHexFrame() }
+        if (ordered.isEmpty()) return lines.filter { it.startsWith(mode) && it.isHexFrame() }
         val joined = ordered.sortedBy { HEX.indexOf(it[0]) }.joinToString("") { it.substring(2) }
         val declared = lines.firstOrNull { it.length <= 3 && it.all { c -> c in HEX } }?.toInt(16)
         val body = if (declared != null && joined.length >= declared * 2) joined.take(declared * 2) else joined
-        return body.takeIf { it.startsWith("41") && it.isHexFrame() }
+        return listOfNotNull(body.takeIf { it.startsWith(mode) && it.isHexFrame() })
     }
+    private fun payload(raw: String): String? = bodies(raw, "41").firstOrNull()
     /** Walks a mode 01 reply PID by PID; one reply may carry several of them. */
     private fun values(raw: String): Map<Sensor, Double> {
         val body = payload(raw) ?: return emptyMap()

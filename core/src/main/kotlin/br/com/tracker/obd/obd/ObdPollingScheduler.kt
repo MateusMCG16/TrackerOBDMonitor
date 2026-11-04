@@ -18,7 +18,10 @@ data class QuerySample(
 class ObdPollingScheduler(private val clock: MonotonicClock = SystemMonotonicClock) {
     suspend fun run(
         targets: List<PollTarget>, query: suspend (PollTarget) -> List<Pair<Sensor, PidResult>>,
-        onSample: (QuerySample) -> Unit
+        onSample: (QuerySample) -> Unit,
+        // A one-shot request (reading trouble codes) runs here, between cycles, so its
+        // latency never reaches the slot adaptation below and never shares a transaction.
+        betweenCycles: suspend () -> Unit = {}
     ) {
         require(targets.isNotEmpty())
         // Two alternating requests share the budget; a single one carries a whole cycle.
@@ -40,6 +43,7 @@ class ObdPollingScheduler(private val clock: MonotonicClock = SystemMonotonicClo
                 else if (needed > slot) needed.coerceAtMost(5000)
                 else max(minimumSlot, max(needed, slot - 5))
             onSample(QuerySample(target, results, started, finished, slot))
+            betweenCycles()
             index = (index + 1) % targets.size
             // Always schedule from the actual start; missed deadlines are discarded.
             nextStart = max(started + slot, finished + 10)

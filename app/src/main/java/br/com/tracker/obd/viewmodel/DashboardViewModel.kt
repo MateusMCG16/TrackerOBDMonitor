@@ -23,6 +23,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun permissionDenied() { mutableError.value = "Permita o acesso a dispositivos próximos nas configurações do aplicativo." }
     fun connect(device: PairedDevice) = repository.connect(device.address, device.name)
     fun demo() = repository.demo()
+    fun readDtc() = repository.requestDtcRead()
     fun disconnect() = repository.disconnect()
     fun pause() = repository.disconnect()
     override fun onCleared() { repository.close(); bluetooth.close() }

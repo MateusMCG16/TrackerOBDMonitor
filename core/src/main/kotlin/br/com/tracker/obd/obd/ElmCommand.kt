@@ -10,7 +10,10 @@ enum class ElmCommand(val wire: String, val timeoutMs: Long = 2000) {
     // A 'response pending' reply (7F xx 78) makes the ELM327 wait up to 5 s on its own,
     // and another 5 s for each further one, so a shorter deadline would kill a healthy
     // session while the adapter is still legitimately waiting (datasheet, p. 47).
-    RPM("010C", 6000), SPEED("010D", 6000), BOTH("010C0D", 6000)
+    RPM("010C", 6000), SPEED("010D", 6000), BOTH("010C0D", 6000),
+    // Read-only diagnostics. Mode 04 (erase codes) is deliberately absent: it writes to
+    // the ECU, and SAE requires a scan tool to confirm intent before sending it.
+    DTC_STATUS("0101", 10000), DTC_STORED("03", 10000)
 }
 
 /** One request on the wire. CAN answers 010C0D in a single message (datasheet, p. 47). */

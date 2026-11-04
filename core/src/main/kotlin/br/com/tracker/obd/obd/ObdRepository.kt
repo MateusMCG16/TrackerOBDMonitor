@@ -5,6 +5,7 @@ import br.com.tracker.obd.demo.DemoTelemetrySource
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicBoolean
 
 data class QueryTrace(val sensor: Sensor, val atMs: Long, val latencyMs: Long, val valid: Boolean, val detail: String?)
 
@@ -24,6 +25,7 @@ class ObdRepository(
     private var job: Job? = null
     @Volatile private var active: Elm327Client? = null
     @Volatile private var meters = Sensor.entries.associateWith { FrequencyMeter() }
+    private val dtcRequested = AtomicBoolean(false)
     private val ticker = scope.launch { while (isActive) { tick(); delay(100) } }
 
     private fun replace(initial: MonitorState, work: suspend CoroutineScope.() -> Unit) {
@@ -33,6 +35,7 @@ class ObdRepository(
         active = null
         mutable.value = initial
         mutableTrace.value = emptyList()
+        dtcRequested.set(false)
         meters = Sensor.entries.associateWith { FrequencyMeter() }
         job = scope.launch {
             old?.cancelAndJoin()
@@ -105,10 +108,10 @@ class ObdRepository(
                     // A clone may simply ignore a multi-PID request: step down without dropping the link.
                     if (misses >= 3 && targets.singleOrNull() == PollTarget.BOTH) throw CombinedUnsupported()
                     results
-                }) { sample ->
+                }, onSample = { sample ->
                     for ((sensor, result) in sample.results)
                         record(sensor, result, sample.finishedMs, sample.latencyMs, sample.slotMs)
-                }
+                }, betweenCycles = { serveDtcRequest(session) })
                 return
             } catch (e: CombinedUnsupported) {
                 targets = fallback
@@ -121,6 +124,58 @@ class ObdRepository(
         message = "MODO DEMONSTRAÇÃO • dados simulados")) {
         DemoTelemetrySource(clock).run { sensor, value, now -> record(sensor, PidResult.Value(value), now, 0, 100) }
     }
+
+    /**
+     * Asks for the stored codes. The read happens in the polling worker, between two
+     * cycles, so it shares the single ELM327 transaction lock instead of racing it.
+     */
+    fun requestDtcRead() {
+        if (mutable.value.phase == ConnectionPhase.DEMO) {
+            mutable.update { it.copy(dtc = demoReport()) }
+            return
+        }
+        if (active == null || mutable.value.phase !in setOf(ConnectionPhase.WAITING, ConnectionPhase.RECEIVING)) {
+            mutable.update { it.copy(dtc = DtcReport(DtcPhase.FAILED,
+                message = "Conecte-se ao adaptador antes de ler os códigos.")) }
+            return
+        }
+        dtcRequested.set(true)
+        mutable.update { it.copy(dtc = it.dtc.copy(phase = DtcPhase.READING, message = null)) }
+    }
+
+    private suspend fun serveDtcRequest(session: Elm327Client) {
+        if (!dtcRequested.getAndSet(false)) return
+        try {
+            val status = DtcParser.status(session.execute(ElmCommand.DTC_STATUS))
+            val can = ObdPidParser.isCanProtocol(session.execute(ElmCommand.PROTOCOL_NUMBER))
+            val codes = DtcParser.codes(session.execute(ElmCommand.DTC_STORED), can)
+                .map { DtcCode(it, DtcDescriptions.of(it), DtcDescriptions.origin(it)) }
+            // The count is the sum over the modules that answered 0101; fewer codes than
+            // that means something withheld its list, which is worth saying out loud.
+            val note = when {
+                status.count > 0 && codes.isEmpty() ->
+                    "A ECU informou ${status.count} código(s), mas não devolveu a lista. O adaptador pode não atender ao modo 03."
+                codes.size < status.count ->
+                    "A ECU contabilizou ${status.count} código(s) e devolveu ${codes.size}."
+                else -> null
+            }
+            mutable.update { it.copy(dtc = DtcReport(DtcPhase.READY, status, codes, note, clock.nowMs())) }
+        } catch (e: CancellationException) { throw e }
+          catch (e: ElmProtocolException) {
+            // Our own parse refusal: the session is untouched, so keep polling.
+            mutable.update { it.copy(dtc = DtcReport(DtcPhase.UNSUPPORTED, message = e.message)) }
+        } catch (e: IOException) {
+            // execute() already closed the session; let the poll loop see the failure.
+            mutable.update { it.copy(dtc = DtcReport(DtcPhase.FAILED,
+                message = e.message ?: "Falha de comunicação durante a leitura.")) }
+            throw e
+        }
+    }
+
+    /** Canned codes so the panel can be seen working without a vehicle. */
+    private fun demoReport() = DtcReport(DtcPhase.READY, DtcStatus(milOn = true, count = 3),
+        listOf("P0133", "P0442", "P1631").map { DtcCode(it, DtcDescriptions.of(it), DtcDescriptions.origin(it)) },
+        message = "Códigos simulados — nenhuma leitura real foi feita.", readAtMs = clock.nowMs())
     private fun record(sensor: Sensor, result: PidResult, now: Long, latency: Long, slot: Long) {
         mutableTrace.update { (it + QueryTrace(sensor, now, latency, result is PidResult.Value, (result as? PidResult.Missing)?.reason)).takeLast(120) }
         if (result is PidResult.Value) meters.getValue(sensor).sample(now)
@@ -159,9 +214,13 @@ class ObdRepository(
         job?.cancel() // Keep the canceled job so a subsequent connection can join its cleanup.
         active?.close(); active = null
         meters = Sensor.entries.associateWith { FrequencyMeter() }
+        dtcRequested.set(false)
         // Preserve measured values with their original timestamps; they age naturally.
+        // A report already read stays on screen with its timestamp; a read in flight dies.
         mutable.update { if (it.phase == ConnectionPhase.DEMO) MonitorState()
-            else it.copy(phase = ConnectionPhase.DISCONNECTED, message = null, attempt = 0) }
+            else it.copy(phase = ConnectionPhase.DISCONNECTED, message = null, attempt = 0,
+                dtc = if (it.dtc.phase == DtcPhase.READING) DtcReport(DtcPhase.FAILED,
+                    message = "Leitura interrompida pela desconexão.") else it.dtc) }
     }
     fun close() { disconnect(); ticker.cancel() }
 }
