@@ -32,7 +32,17 @@ data class MonitorState(
     val deviceName: String? = null, val message: String? = null, val attempt: Int = 0,
     val telemetry: VehicleTelemetry = VehicleTelemetry(), val warnings: List<String> = emptyList(),
     val dtc: DtcReport = DtcReport()
-)
+) {
+    /** A session the user can cancel or close: anything but idle and failed. */
+    val active: Boolean get() = phase != ConnectionPhase.DISCONNECTED && phase != ConnectionPhase.ERROR
+
+    /**
+     * A session that can still produce samples. Derived here rather than in each
+     * screen so two call sites cannot drift apart.
+     */
+    val live: Boolean get() = phase == ConnectionPhase.RECEIVING ||
+        phase == ConnectionPhase.WAITING || phase == ConnectionPhase.DEMO
+}
 
 /**
  * Counts only actual successful responses in a rolling two-second window.

@@ -80,14 +80,31 @@ As leituras ficam desatualizadas após `max(1,5 s, min(5 s, 6 × intervalo entre
 
 **Modo demo** não solicita permissões, não abre sockets e não acessa o adaptador. Gera velocidade e RPM a cada 200 ms por sensor, com ciclo suave 0 → 100 → 0 km/h em 28 s e rotações com trocas de marcha ilustrativas. Toda a tela identifica **MODO DEMONSTRAÇÃO • DADOS SIMULADOS**. As transições visuais de 180 ms usam o relógio de quadros do Compose: podem ser fluidas em telas de 60 Hz sem aumentar a frequência das medições.
 
+## Telas
+
+Três destinos numa barra inferior, **nenhum deles rola**: cada tela ocupa exatamente uma altura de tela e o conteúdo se ajusta ao espaço disponível.
+
+```text
+Instrumentos   cabeçalho + velocímetro + conta-giros + botões de sessão
+Diagnóstico    estado da luz de injeção, lista de códigos, botão de leitura
+Ajuda          sessão, como ler o código, o que o diagnóstico faz, limites
+```
+
+- Os dois instrumentos dividem a altura livre (`weight(1f)` cada). O mostrador, os números e as marcações se dimensionam pelo espaço medido — não há proporção fixa. Em telas de 680 dp ou mais eles ficam lado a lado.
+- A seleção de adaptador continua sendo um diálogo sobre a tela atual, não um destino.
+- A aba Ajuda divide o texto em quatro tópicos atrás de uma linha de chips: só o tópico escolhido é composto, e em telas baixas a escala de tipografia se aperta em vez de a página crescer.
+- A aba mostra um ponto âmbar quando há código de falha (Diagnóstico) ou aviso do adaptador (Ajuda).
+- A aba escolhida é `rememberSaveable`: sobrevive à rotação, como a sessão no ViewModel. O botão voltar do sistema retorna a Instrumentos.
+- **Uma única região rola**: a lista de códigos de falha, cujo tamanho o aplicativo não controla. Com muitos códigos armazenados, a lista rola dentro do seu quadro; a tela em si não.
+
 ## Arquitetura
 
 ```text
 app/src/main/java/br/com/tracker/obd/
-  MainActivity.kt                 permissões, ciclo de vida, tema
+  MainActivity.kt                 permissões, ciclo de vida, tema, abas
   bluetooth/                      RFCOMM, socket, leitor assíncrono limitado
   viewmodel/                      DashboardViewModel / StateFlow
-  ui/                             painel, seleção, instrumentos e tema
+  ui/                             Navigation, três telas, seleção e tema
 core/src/main/kotlin/br/com/tracker/obd/
   data/                           modelos, relógio, idade e Hz
   obd/                            lista de comandos, ELM, parser, scheduler, repositório

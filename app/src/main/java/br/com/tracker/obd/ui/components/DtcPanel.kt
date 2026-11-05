@@ -1,18 +1,12 @@
 package br.com.tracker.obd.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,105 +24,30 @@ import br.com.tracker.obd.data.*
 import br.com.tracker.obd.ui.theme.*
 import java.util.Locale
 
-@Composable fun DtcPanel(report: DtcReport, nowMs: Long, enabled: Boolean, onRead: () -> Unit,
-                         modifier: Modifier = Modifier) {
-    val reading = report.phase == DtcPhase.READING
+/**
+ * The lamp and the one-line verdict. Fixed height, so the screen that holds it
+ * can give every remaining pixel to the list of codes.
+ */
+@Composable internal fun DtcStatusRow(report: DtcReport, nowMs: Long, modifier: Modifier = Modifier) {
     val milOn = report.status?.milOn == true
-    Column(modifier.background(Brush.verticalGradient(listOf(Panel, Color(0xFF0F1724))), RoundedCornerShape(26.dp))
-        .border(1.dp, if (milOn) Warning.copy(alpha = 0.45f) else Color(0xFF263449), RoundedCornerShape(26.dp))
-        .padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("ESTADO ATUAL", color = Cyan, fontSize = 10.sp, letterSpacing = 2.5.sp,
-                    fontWeight = FontWeight.Bold)
-                Text(headline(report), color = Color(0xFFEAF4FF), fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
-                Text(subtitle(report, nowMs), color = Muted, fontSize = 11.sp)
-            }
-            MilLamp(milOn)
-        }
-
-        if (report.codes.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            report.codes.forEach { CodeRow(it) }
-        }
-
-        AnimatedVisibility(report.phase == DtcPhase.READY && report.codes.isEmpty(),
-            enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
-            Row(Modifier.fillMaxWidth().background(Color(0xFF12222B), RoundedCornerShape(14.dp)).padding(14.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(8.dp).background(Cyan, RoundedCornerShape(4.dp)))
-                Text("Nenhum código armazenado nos módulos que responderam.", color = Color(0xFFBFD6E8), fontSize = 12.sp)
-            }
-        }
-
-        report.message?.let {
-            Text(it, color = if (report.phase == DtcPhase.READY) Muted else Warning, fontSize = 11.sp)
-        }
-
-        Button(onClick = onRead, enabled = enabled && !reading, modifier = Modifier.fillMaxWidth()) {
-            if (reading) {
-                CircularProgressIndicator(Modifier.size(15.dp), strokeWidth = 2.dp, color = Graphite)
-                Spacer(Modifier.width(10.dp))
-                Text("Lendo…")
-            } else Text(if (report.phase == DtcPhase.NEVER) "Ler códigos de falha" else "Ler novamente")
+    Row(modifier.background(Brush.verticalGradient(listOf(Panel, Color(0xFF0F1724))), RoundedCornerShape(22.dp))
+        .border(1.dp, if (milOn) Warning.copy(alpha = 0.45f) else Color(0xFF263449), RoundedCornerShape(22.dp))
+        .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        MilLamp(milOn, 46.dp)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("ESTADO ATUAL", color = Cyan, fontSize = 9.sp, letterSpacing = 2.5.sp, fontWeight = FontWeight.Bold)
+            Text(dtcHeadline(report), color = Color(0xFFEAF4FF), fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(dtcSubtitle(report, nowMs), color = Muted, fontSize = 10.sp, maxLines = 1)
         }
     }
 }
 
-/** The dashboard's way in: enough to know whether the screen is worth opening. */
-@Composable fun DtcSummaryCard(report: DtcReport, onOpen: () -> Unit, modifier: Modifier = Modifier) {
-    val milOn = report.status?.milOn == true
-    Surface(onClick = onOpen, modifier = modifier, shape = RoundedCornerShape(20.dp),
-        color = Panel, border = BorderStroke(1.dp, if (milOn) Warning.copy(alpha = 0.45f) else Color(0xFF263449))) {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            MilLamp(milOn, 34.dp)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text("DIAGNÓSTICO DA ECU", color = Cyan, fontSize = 10.sp, letterSpacing = 2.5.sp,
-                    fontWeight = FontWeight.Bold)
-                Text(headline(report), color = Color(0xFFEAF4FF), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            }
-            Chevron()
-        }
-    }
-}
-
-/** Drawn rather than imported: the project ships no icon dependency. */
-@Composable private fun Chevron() {
-    Canvas(Modifier.size(16.dp)) {
-        val path = Path().apply {
-            moveTo(size.width * 0.32f, size.height * 0.22f)
-            lineTo(size.width * 0.68f, size.height * 0.5f)
-            lineTo(size.width * 0.32f, size.height * 0.78f)
-        }
-        drawPath(path, Muted, style = Stroke(2.2f, cap = StrokeCap.Round))
-    }
-}
-
-private fun headline(report: DtcReport) = when (report.phase) {
-    DtcPhase.NEVER -> "Nunca lido"
-    DtcPhase.READING -> "Consultando a ECU…"
-    DtcPhase.UNSUPPORTED -> "Não atendido"
-    DtcPhase.FAILED -> "Leitura falhou"
-    DtcPhase.READY -> when (val n = report.codes.size) {
-        0 -> "Sem falhas"
-        1 -> "1 código"
-        else -> "$n códigos"
-    }
-}
-
-private fun subtitle(report: DtcReport, nowMs: Long): String {
-    val lamp = report.status?.let { if (it.milOn) "Luz de injeção acesa" else "Luz de injeção apagada" }
-    val age = report.readAtMs?.let {
-        String.format(Locale.US, "lido há %.0f s", (nowMs - it).coerceAtLeast(0) / 1000.0)
-    }
-    return listOfNotNull(lamp, age).joinToString(" • ").ifEmpty { "Toque para consultar os módulos" }
-}
-
-@Composable private fun CodeRow(code: DtcCode) {
+@Composable internal fun DtcCodeRow(code: DtcCode) {
     Row(Modifier.fillMaxWidth().background(Color(0xFF16202F), RoundedCornerShape(14.dp))
-        .border(1.dp, Color(0xFF26354B), RoundedCornerShape(14.dp)).padding(13.dp),
-        horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+        .border(1.dp, Color(0xFF26354B), RoundedCornerShape(14.dp)).padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(code.code, color = Cyan, fontFamily = FontFamily.Monospace, fontSize = 15.sp,
             fontWeight = FontWeight.Bold, modifier = Modifier.width(62.dp))
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -140,8 +59,28 @@ private fun subtitle(report: DtcReport, nowMs: Long): String {
     }
 }
 
+internal fun dtcHeadline(report: DtcReport) = when (report.phase) {
+    DtcPhase.NEVER -> "Nunca lido"
+    DtcPhase.READING -> "Consultando a ECU…"
+    DtcPhase.UNSUPPORTED -> "Não atendido"
+    DtcPhase.FAILED -> "Leitura falhou"
+    DtcPhase.READY -> when (val n = report.codes.size) {
+        0 -> "Sem falhas"
+        1 -> "1 código"
+        else -> "$n códigos"
+    }
+}
+
+internal fun dtcSubtitle(report: DtcReport, nowMs: Long): String {
+    val lamp = report.status?.let { if (it.milOn) "Luz de injeção acesa" else "Luz de injeção apagada" }
+    val age = report.readAtMs?.let {
+        String.format(Locale.US, "lido há %.0f s", (nowMs - it).coerceAtLeast(0) / 1000.0)
+    }
+    return listOfNotNull(lamp, age).joinToString(" • ").ifEmpty { "Toque em ler para consultar os módulos" }
+}
+
 /** The ISO malfunction indicator glyph, drawn so the panel needs no bitmap asset. */
-@Composable private fun MilLamp(on: Boolean, diameter: Dp = 58.dp) {
+@Composable internal fun MilLamp(on: Boolean, diameter: Dp = 58.dp) {
     val pulse = rememberInfiniteTransition(label = "mil")
     val glow by pulse.animateFloat(0.30f, 0.70f,
         infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "glow")
