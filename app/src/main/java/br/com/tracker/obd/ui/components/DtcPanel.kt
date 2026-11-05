@@ -6,6 +6,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +23,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.tracker.obd.data.*
@@ -38,7 +40,7 @@ import java.util.Locale
 
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("DIAGNÓSTICO DA ECU", color = Cyan, fontSize = 10.sp, letterSpacing = 2.5.sp,
+                Text("ESTADO ATUAL", color = Cyan, fontSize = 10.sp, letterSpacing = 2.5.sp,
                     fontWeight = FontWeight.Bold)
                 Text(headline(report), color = Color(0xFFEAF4FF), fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
                 Text(subtitle(report, nowMs), color = Muted, fontSize = 11.sp)
@@ -70,10 +72,36 @@ import java.util.Locale
                 Text("Lendo…")
             } else Text(if (report.phase == DtcPhase.NEVER) "Ler códigos de falha" else "Ler novamente")
         }
+    }
+}
 
-        Text("Somente leitura • modo 01 PID 01 e modo 03. O aplicativo não apaga códigos.\n" +
-            "Cobre falhas de emissões (motor e câmbio); ABS e airbag não aparecem aqui.",
-            color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+/** The dashboard's way in: enough to know whether the screen is worth opening. */
+@Composable fun DtcSummaryCard(report: DtcReport, onOpen: () -> Unit, modifier: Modifier = Modifier) {
+    val milOn = report.status?.milOn == true
+    Surface(onClick = onOpen, modifier = modifier, shape = RoundedCornerShape(20.dp),
+        color = Panel, border = BorderStroke(1.dp, if (milOn) Warning.copy(alpha = 0.45f) else Color(0xFF263449))) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            MilLamp(milOn, 34.dp)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("DIAGNÓSTICO DA ECU", color = Cyan, fontSize = 10.sp, letterSpacing = 2.5.sp,
+                    fontWeight = FontWeight.Bold)
+                Text(headline(report), color = Color(0xFFEAF4FF), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            }
+            Chevron()
+        }
+    }
+}
+
+/** Drawn rather than imported: the project ships no icon dependency. */
+@Composable private fun Chevron() {
+    Canvas(Modifier.size(16.dp)) {
+        val path = Path().apply {
+            moveTo(size.width * 0.32f, size.height * 0.22f)
+            lineTo(size.width * 0.68f, size.height * 0.5f)
+            lineTo(size.width * 0.32f, size.height * 0.78f)
+        }
+        drawPath(path, Muted, style = Stroke(2.2f, cap = StrokeCap.Round))
     }
 }
 
@@ -113,12 +141,12 @@ private fun subtitle(report: DtcReport, nowMs: Long): String {
 }
 
 /** The ISO malfunction indicator glyph, drawn so the panel needs no bitmap asset. */
-@Composable private fun MilLamp(on: Boolean) {
+@Composable private fun MilLamp(on: Boolean, diameter: Dp = 58.dp) {
     val pulse = rememberInfiniteTransition(label = "mil")
     val glow by pulse.animateFloat(0.30f, 0.70f,
         infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "glow")
     val color = if (on) Warning else Color(0xFF3A4860)
-    Box(Modifier.size(58.dp).clearAndSetSemantics {
+    Box(Modifier.size(diameter).clearAndSetSemantics {
         contentDescription = if (on) "Luz de injeção acesa" else "Luz de injeção apagada"
     }, contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
@@ -127,30 +155,34 @@ private fun subtitle(report: DtcReport, nowMs: Long): String {
             if (on) drawCircle(Brush.radialGradient(
                 listOf(Warning.copy(alpha = glow * 0.5f), Color.Transparent), Offset(w / 2, h / 2), w / 2),
                 w / 2, Offset(w / 2, h / 2))
+            // The engine block in profile: a raised cam cover on top, cooling fins on
+            // the left flank, the intake stub on the right. No dots inside — two of them
+            // read as eyes at this size and turn the whole glyph into a face.
             val body = Path().apply {
-                moveTo(w * 0.26f, h * 0.42f)
-                lineTo(w * 0.34f, h * 0.42f)
-                lineTo(w * 0.38f, h * 0.32f)
-                lineTo(w * 0.52f, h * 0.32f)
-                lineTo(w * 0.56f, h * 0.42f)
-                lineTo(w * 0.70f, h * 0.42f)
-                lineTo(w * 0.70f, h * 0.50f)
-                lineTo(w * 0.76f, h * 0.50f)
-                lineTo(w * 0.76f, h * 0.62f)
-                lineTo(w * 0.70f, h * 0.62f)
-                lineTo(w * 0.70f, h * 0.70f)
-                lineTo(w * 0.30f, h * 0.70f)
+                moveTo(w * 0.22f, h * 0.40f)
+                lineTo(w * 0.38f, h * 0.40f)
+                lineTo(w * 0.42f, h * 0.30f)
+                lineTo(w * 0.58f, h * 0.30f)
+                lineTo(w * 0.58f, h * 0.40f)
+                lineTo(w * 0.72f, h * 0.40f)
+                lineTo(w * 0.72f, h * 0.46f)
+                lineTo(w * 0.84f, h * 0.46f)
+                lineTo(w * 0.84f, h * 0.60f)
+                lineTo(w * 0.72f, h * 0.60f)
+                lineTo(w * 0.72f, h * 0.68f)
+                lineTo(w * 0.30f, h * 0.68f)
                 lineTo(w * 0.30f, h * 0.62f)
-                lineTo(w * 0.22f, h * 0.62f)
+                lineTo(w * 0.16f, h * 0.62f)
+                lineTo(w * 0.16f, h * 0.56f)
+                lineTo(w * 0.22f, h * 0.56f)
                 lineTo(w * 0.22f, h * 0.50f)
-                lineTo(w * 0.26f, h * 0.50f)
+                lineTo(w * 0.16f, h * 0.50f)
+                lineTo(w * 0.16f, h * 0.44f)
+                lineTo(w * 0.22f, h * 0.44f)
                 close()
             }
             drawPath(body, color.copy(alpha = if (on) 0.9f else 0.5f))
             drawPath(body, color, style = Stroke(1.6f))
-            // The two bolts the symbol carries on its left flank.
-            drawCircle(Graphite, w * 0.025f, Offset(w * 0.37f, h * 0.55f))
-            drawCircle(Graphite, w * 0.025f, Offset(w * 0.47f, h * 0.55f))
         }
     }
 }

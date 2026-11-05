@@ -9,6 +9,7 @@ import android.provider.Settings
 import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.enableEdgeToEdge
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
                 val devices by model.devices.collectAsStateWithLifecycle()
                 val error by model.deviceError.collectAsStateWithLifecycle()
                 var showConnection by remember { mutableStateOf(false) }
+                var showDiagnostics by remember { mutableStateOf(false) }
                 val context = LocalContext.current
                 val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                     if (granted) model.refreshDevices() else model.permissionDenied()
@@ -53,10 +55,13 @@ class MainActivity : ComponentActivity() {
                     else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     onDispose { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
                 }
+                BackHandler(enabled = showDiagnostics) { showDiagnostics = false }
                 Surface {
-                    DashboardScreen(state, link, onConnect = { showConnection = true; refresh() },
+                    if (showDiagnostics)
+                        DiagnosticsScreen(state, onRead = model::readDtc, onBack = { showDiagnostics = false })
+                    else DashboardScreen(state, link, onConnect = { showConnection = true; refresh() },
                         onDemo = model::demo, onDisconnect = model::disconnect,
-                        onReadDtc = model::readDtc)
+                        onOpenDiagnostics = { showDiagnostics = true })
                     if (showConnection) ConnectionScreen(devices, error,
                         onSelect = { showConnection = false; model.connect(it) }, onRefresh = refresh,
                         onSettings = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
