@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.tracker.obd.data.MonitorState
+import br.com.tracker.obd.ui.components.label
 import br.com.tracker.obd.ui.theme.*
 
 /**
@@ -33,10 +34,10 @@ private enum class Topic(val chip: String, val title: String) {
 
 @Composable fun HelpScreen(state: MonitorState, modifier: Modifier = Modifier) {
     var topic by rememberSaveable { mutableStateOf(Topic.SESSION) }
-    Column(modifier.fillMaxSize().background(Graphite).padding(horizontal = 14.dp, vertical = 10.dp),
+    Column(modifier.fillMaxSize().background(Primer.BgDefault).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
 
-        ScreenHeader("TRACKER / AJUDA", "Ajuda e sessão", "Somente leitura • veículo parado")
+        ScreenHeader("Tracker / Ajuda", "Ajuda e sessão", "Somente leitura • veículo parado")
 
         ChipRow(Topic.entries.map { it.chip }, topic.ordinal) { topic = Topic.entries[it] }
 
@@ -45,20 +46,17 @@ private enum class Topic(val chip: String, val title: String) {
             val body = if (dense) 11.sp else 12.5.sp
             val line = if (dense) 15.sp else 19.sp
             // Hugs its content: a panel stretched to the free height reads as empty.
-            Column(Modifier.fillMaxWidth().background(Panel, RoundedCornerShape(20.dp))
-                .border(1.dp, Color(0xFF263449), RoundedCornerShape(20.dp)).padding(16.dp),
+            PrimerBox(Modifier.fillMaxWidth(), title = topic.title.lowercase().replaceFirstChar { it.uppercase() }) {
+            Column(Modifier.fillMaxWidth().padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(if (dense) 5.dp else 9.dp)) {
-
-                Text(topic.title, color = Cyan, fontSize = 10.sp, letterSpacing = 2.5.sp,
-                    fontWeight = FontWeight.Bold)
 
                 when (topic) {
                     Topic.SESSION -> {
-                        Metric("Estado", state.phase.name.lowercase())
+                        Metric("Estado", state.phase.label())
                         Metric("Adaptador", state.deviceName ?: "nenhum dispositivo pareado selecionado")
                         Metric("Intervalo entre consultas", "${state.telemetry.slotMs} ms • meta de 5 Hz por sensor")
                         if (state.warnings.isEmpty()) Para("Nenhum aviso do adaptador nesta sessão.", body, line)
-                        else state.warnings.forEach { Bullet(it, body, line, Warning) }
+                        else state.warnings.forEach { Bullet(it, body, line, Primer.FgAttention) }
                         Para("Hz conta somente respostas válidas; a animação não cria medições.", body, line)
                     }
                     Topic.VEHICLE -> {
@@ -94,33 +92,34 @@ private enum class Topic(val chip: String, val title: String) {
                     }
                 }
             }
+            }
         }
     }
 }
 
 @Composable private fun Para(text: String, size: TextUnit, line: TextUnit) =
-    Text(text, color = Color(0xFFBFD6E8), fontSize = size, lineHeight = line)
+    Text(text, color = Primer.FgDefault, fontSize = size, lineHeight = line)
 
-@Composable private fun Bullet(text: String, size: TextUnit, line: TextUnit, accent: Color = Cyan) {
+@Composable private fun Bullet(text: String, size: TextUnit, line: TextUnit, accent: Color = Primer.FgMuted) {
     Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
         Text("•", color = accent, fontSize = size)
-        Text(text, color = if (accent == Cyan) Color(0xFFBFD6E8) else accent, fontSize = size, lineHeight = line)
+        Text(text, color = if (accent == Primer.FgMuted) Primer.FgDefault else accent, fontSize = size, lineHeight = line)
     }
 }
 
 @Composable private fun Legend(letter: String, meaning: String, size: TextUnit) {
     Row(horizontalArrangement = Arrangement.spacedBy(11.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(letter, color = Cyan, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold,
-            fontSize = size, modifier = Modifier.background(Color(0xFF16202F), RoundedCornerShape(7.dp))
-                .padding(horizontal = 9.dp, vertical = 4.dp))
-        Text(meaning, color = Color(0xFFD6E6FA), fontSize = size)
+        Text(letter, color = Primer.FgDefault, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold,
+            fontSize = size, modifier = Modifier.background(Primer.BgNeutralMuted, Primer.RadiusMedium)
+                .padding(horizontal = 9.dp, vertical = 3.dp))
+        Text(meaning, color = Primer.FgDefault, fontSize = size)
     }
 }
 
 @Composable private fun Metric(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(label, color = Muted, fontSize = 11.sp, modifier = Modifier.weight(1f))
-        Text(value, color = Color(0xFFD6E6FA), fontSize = 11.sp, fontWeight = FontWeight.Medium,
+        Text(label, color = Primer.FgMuted, fontSize = 12.sp, modifier = Modifier.weight(1f))
+        Text(value, color = Primer.FgDefault, fontSize = 12.sp, fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1.3f))
     }
 }

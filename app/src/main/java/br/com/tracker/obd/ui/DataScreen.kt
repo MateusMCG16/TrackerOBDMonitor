@@ -1,11 +1,13 @@
 package br.com.tracker.obd.ui
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -58,20 +60,25 @@ enum class DataTopic(val chip: String, val title: String, val group: DataGroup, 
     state: MonitorState, topic: DataTopic, onTopic: (DataTopic) -> Unit, modifier: Modifier = Modifier
 ) {
     val demo = state.phase == ConnectionPhase.DEMO
-    Column(modifier.fillMaxSize().background(Graphite).padding(horizontal = 14.dp, vertical = 10.dp),
+    // The warning floats as a Toast for five seconds instead of taking a clipped line
+    // above the grid; it comes back whenever its text changes or the screen reopens.
+    val warning = state.extras.notice
+        ?: if (!state.live) "Sem sessão ativa: conecte em Instrumentos. Valores antigos ficam esmaecidos." else null
+    var toast by remember { mutableStateOf<String?>(null) }
+    var toastText by remember { mutableStateOf("") }
+    LaunchedEffect(warning) {
+        toast = warning
+        if (warning != null) { toastText = warning; delay(5000); toast = null }
+    }
+    Box(modifier.fillMaxSize().background(Primer.BgDefault)) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
 
-        ScreenHeader(if (demo) "MODO DEMONSTRAÇÃO • DADOS SIMULADOS" else "TRACKER / DADOS", topic.title,
+        ScreenHeader(if (demo) "Modo demonstração • dados simulados" else "Tracker / Dados", topic.title,
             "${state.phase.label()} • ${state.deviceName ?: "nenhum dispositivo"}",
-            accent = if (demo) Warning else Cyan)
+            accent = if (demo) Primer.FgAttention else Primer.FgMuted)
 
         ChipRow(DataTopic.entries.map { it.chip }, topic.ordinal) { onTopic(DataTopic.entries[it]) }
-
-        // One line, always present, so the grid below never changes height under the eye.
-        val notice = state.extras.notice ?: if (state.live) "Atualiza só os valores desta tela."
-            else "Sem sessão ativa: conecte em Instrumentos. Valores antigos ficam esmaecidos."
-        Text(notice, color = if (state.extras.notice != null || !state.live) Warning else Muted,
-            fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
 
         BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
             val columns = if (maxWidth >= 680.dp) 4 else 2
@@ -91,6 +98,11 @@ enum class DataTopic(val chip: String, val title: String, val group: DataGroup, 
                 }
             }
         }
+    }
+    AnimatedVisibility(toast != null, Modifier.align(Alignment.BottomCenter).padding(16.dp),
+        enter = fadeIn() + slideInVertically { it / 2 }, exit = fadeOut() + slideOutVertically { it / 2 }) {
+        PrimerToast(toastText, Tone.ATTENTION, onDismiss = { toast = null })
+    }
     }
 }
 
@@ -113,35 +125,50 @@ enum class DataTopic(val chip: String, val title: String, val group: DataGroup, 
     val number = if (stacked) (rowHeight.value * 0.33f).coerceIn(18f, 34f) else (rowHeight.value * 0.42f).coerceIn(14f, 20f)
     val valueSize = size(if (wordy) number * 0.58f else number)
     val labelSize = size(if (rowHeight >= 80.dp) 12f else 10.5f)
+    // Faixas que pedem atenção só mudam a cor do número e da borda, como no painel web.
+    val level = if (value != null && fresh) signalLevel(signal, value) else null
     val valueColor = when {
-        value == null -> Muted
-        fresh -> Color(0xFFF3FAFF)
-        else -> Muted
+        value == null || !fresh -> Primer.FgMuted
+        level == Tone.DANGER -> Primer.FgDanger
+        level == Tone.ATTENTION -> Primer.FgAttention
+        else -> Primer.FgDefault
     }
-    val shape = RoundedCornerShape(16.dp)
-    val box = modifier.background(Brush.verticalGradient(listOf(Panel, Color(0xFF0F1724))), shape)
-        .border(1.dp, Color(0xFF263449), shape)
+    val shape = Primer.RadiusMedium
+    val box = modifier.background(Primer.BgDefault, shape)
+        .border(1.dp, level?.border ?: Primer.BorderDefault, shape)
         .padding(horizontal = 12.dp, vertical = if (stacked) 8.dp else 4.dp)
         .clearAndSetSemantics {
             contentDescription = "${signal.label}: $text $unit" + if (value != null && !fresh) ", desatualizado" else ""
         }
 
     @Composable fun Value() = Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(text, color = valueColor, fontSize = valueSize, fontWeight = if (wordy) FontWeight.Medium else FontWeight.Light,
+        Text(text, color = valueColor, fontSize = valueSize, fontWeight = if (wordy) FontWeight.Medium else FontWeight.SemiBold,
             maxLines = 1, softWrap = false, modifier = Modifier.alignByBaseline())
-        if (unit.isNotEmpty()) Text(unit, color = if (fresh) Cyan else Muted, fontSize = size(11f),
+        if (unit.isNotEmpty()) Text(unit, color = Primer.FgMuted, fontSize = size(11f),
             maxLines = 1, softWrap = false, modifier = Modifier.alignByBaseline())
     }
 
     if (stacked) Column(box, verticalArrangement = Arrangement.Center) {
-        Text(signal.label, color = Muted, fontSize = labelSize, lineHeight = labelSize * 1.2f,
+        Text(signal.label, color = Primer.FgMuted, fontSize = labelSize, lineHeight = labelSize * 1.2f,
             maxLines = if (rowHeight >= 92.dp) 2 else 1, overflow = TextOverflow.Ellipsis)
         Value()
     } else Row(box, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(signal.label, color = Muted, fontSize = labelSize, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        Text(signal.label, color = Primer.FgMuted, fontSize = labelSize, maxLines = 1, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f))
         Value()
     }
+}
+
+/** Mesmas faixas do painel web. Só colorem o valor; nenhuma decisão é tomada a partir delas. */
+internal fun signalLevel(signal: Signal, v: Double): Tone? = when (signal) {
+    Signal.COOLANT -> if (v >= 115) Tone.DANGER else if (v >= 105) Tone.ATTENTION else null
+    Signal.CATALYST -> if (v >= 950) Tone.DANGER else if (v >= 850) Tone.ATTENTION else null
+    Signal.FUEL_TRIM_SHORT, Signal.FUEL_TRIM_LONG ->
+        if (abs(v) >= 20) Tone.DANGER else if (abs(v) >= 10) Tone.ATTENTION else null
+    Signal.FUEL_LEVEL -> if (v < 8) Tone.DANGER else if (v < 15) Tone.ATTENTION else null
+    Signal.ECM_VOLTAGE, Signal.TCM_VOLTAGE, Signal.ADAPTER_VOLTAGE ->
+        if (v < 11.5 || v > 15.5) Tone.DANGER else if (v < 12.2 || v > 15) Tone.ATTENTION else null
+    else -> null
 }
 
 private val PT_BR: Locale = Locale.forLanguageTag("pt-BR")

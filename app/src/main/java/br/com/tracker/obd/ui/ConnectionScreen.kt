@@ -13,19 +13,23 @@ import br.com.tracker.obd.ui.theme.*
 
 @Composable fun ConnectionScreen(devices: List<PairedDevice>, error: String?, onSelect: (PairedDevice) -> Unit,
     onRefresh: () -> Unit, onSettings: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss,
+    AlertDialog(onDismissRequest = onDismiss, containerColor = Primer.BgMuted, shape = Primer.RadiusLarge,
+        titleContentColor = Primer.FgDefault, textContentColor = Primer.FgDefault,
         title = { Text("Conectar adaptador") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Pareie o ELM327 nas configurações do Android. Depois selecione abaixo. Somente Bluetooth Classic SPP.")
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                if (devices.isEmpty()) Text("Nenhum dispositivo pareado disponível.", color = Muted)
+                if (devices.isEmpty()) Text("Nenhum dispositivo pareado disponível.", color = Primer.FgMuted)
                 LazyColumn(Modifier.heightIn(max = 280.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(devices, key = { it.address }) { device ->
-                        OutlinedCard(onClick = { onSelect(device) }, modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(14.dp)) {
-                                Text(device.name, color = Cyan)
-                                Text(device.address, color = Muted, fontSize = 11.sp)
+                        OutlinedCard(onClick = { onSelect(device) }, modifier = Modifier.fillMaxWidth(),
+                            shape = Primer.RadiusMedium,
+                            colors = CardDefaults.outlinedCardColors(containerColor = Primer.BgDefault),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Primer.BorderDefault)) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(device.name, color = Primer.FgAccent, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                                Text(device.address, color = Primer.FgMuted, fontSize = 12.sp, fontFamily = Primer.Mono)
                             }
                         }
                     }

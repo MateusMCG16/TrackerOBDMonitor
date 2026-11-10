@@ -24,10 +24,10 @@ import br.com.tracker.obd.ui.theme.*
 @Composable fun DiagnosticsScreen(state: MonitorState, onRead: () -> Unit, modifier: Modifier = Modifier) {
     val report = state.dtc
     val reading = report.phase == DtcPhase.READING
-    Column(modifier.fillMaxSize().background(Graphite).padding(horizontal = 14.dp, vertical = 10.dp),
+    Column(modifier.fillMaxSize().background(Primer.BgDefault).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
 
-        ScreenHeader("TRACKER / DIAGNÓSTICO", "Códigos de falha",
+        ScreenHeader("Tracker / Diagnóstico", "Códigos de falha",
             "${state.phase.label()} • ${state.deviceName ?: "nenhum dispositivo"}")
 
         DtcStatusRow(report, state.telemetry.nowMs, Modifier.fillMaxWidth())
@@ -41,35 +41,30 @@ import br.com.tracker.obd.ui.theme.*
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(report.codes, key = { it.code + it.origin }) { DtcCodeRow(it) }
                 }
-                !state.live -> Hint(Warning, "Sem sessão ativa. Vá para Instrumentos, conecte o ELM327 " +
+                !state.live -> Hint(Tone.ATTENTION, "Sem sessão ativa. Vá para Instrumentos, conecte o ELM327 " +
                     "ou abra o modo demo, e volte aqui para consultar.")
-                report.phase == DtcPhase.READY -> Hint(Cyan,
+                report.phase == DtcPhase.READY -> Hint(Tone.SUCCESS,
                     "Nenhum código confirmado, pendente ou permanente nos módulos que responderam.")
-                else -> Hint(Muted, "Toque em ler para pedir o estado da luz de injeção (modo 01 PID 01) " +
+                else -> Hint(Tone.ACCENT, "Toque em ler para pedir o estado da luz de injeção (modo 01 PID 01) " +
                     "e as listas de códigos confirmados, pendentes e permanentes (modos 03, 07 e 0A). " +
                     "Nada é escrito na ECU.")
             }
         }
 
         report.message?.let {
-            Text(it, color = if (report.phase == DtcPhase.READY) Muted else Warning,
-                fontSize = 11.sp, maxLines = 2)
+            Text(it, color = if (report.phase == DtcPhase.READY) Primer.FgMuted else Primer.FgAttention,
+                fontSize = 12.sp, maxLines = 2)
         }
 
-        Button(onClick = onRead, enabled = state.live && !reading, modifier = Modifier.fillMaxWidth()) {
-            if (reading) {
-                CircularProgressIndicator(Modifier.size(15.dp), strokeWidth = 2.dp, color = Graphite)
-                Spacer(Modifier.width(10.dp))
-                Text("Lendo…")
-            } else Text(if (report.phase == DtcPhase.NEVER) "Ler códigos de falha" else "Ler novamente")
-        }
+        PrimerButton(when {
+                reading -> "Lendo…"
+                report.phase == DtcPhase.NEVER -> "Ler códigos de falha"
+                else -> "Ler novamente"
+            }, onRead, Modifier.fillMaxWidth(), ButtonVariant.PRIMARY, enabled = state.live && !reading,
+            leading = if (reading) ({
+                CircularProgressIndicator(Modifier.size(15.dp), strokeWidth = 2.dp, color = Primer.FgMuted)
+            }) else null)
     }
 }
 
-@Composable private fun Hint(accent: Color, text: String) {
-    Row(Modifier.fillMaxWidth().background(accent.copy(alpha = 0.10f), RoundedCornerShape(16.dp))
-        .padding(15.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Box(Modifier.size(8.dp).background(accent, RoundedCornerShape(4.dp)))
-        Text(text, color = accent, fontSize = 12.sp, lineHeight = 18.sp)
-    }
-}
+@Composable private fun Hint(tone: Tone, text: String) = Banner(text, tone, maxLines = 5)
