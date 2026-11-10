@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tracker OBD · Painel ao vivo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="marca">
+      <h1>Tracker OBD</h1>
+      <p id="status" class="status">Desconectado</p>
+    </div>
+    <div class="acoes">
+      <button id="btnConnect" class="primario">Conectar ELM327</button>
+      <button id="btnDemo">Modo demo</button>
+      <button id="btnStop" hidden>Desconectar</button>
+    </div>
+  </header>
+
+  <p id="demoBanner" class="faixa demo" hidden>MODO DEMONSTRAÇÃO • DADOS SIMULADOS</p>
+  <p id="aviso" class="faixa aviso" hidden></p>
+
+  <main>
+    <section class="linha-principal">
+      <div class="painel mostrador">
+        <svg viewBox="0 0 200 180" aria-hidden="true">
+          <path class="trilho" d="M43.43 156.57 A80 80 0 1 1 156.57 156.57" pathLength="100"/>
+          <path id="gSpeedArc" class="arco azul" d="M43.43 156.57 A80 80 0 1 1 156.57 156.57" pathLength="100" stroke-dasharray="0 100"/>
+        </svg>
+        <div class="leitura">
+          <span id="gSpeedVal" class="numero">--</span>
+          <span class="unidade">km/h</span>
+        </div>
+        <h2>Velocidade</h2>
+      </div>
+
+      <div class="painel mostrador">
+        <svg viewBox="0 0 200 180" aria-hidden="true">
+          <path class="trilho" d="M43.43 156.57 A80 80 0 1 1 156.57 156.57" pathLength="100"/>
+          <path id="gRpmArc" class="arco ciano" d="M43.43 156.57 A80 80 0 1 1 156.57 156.57" pathLength="100" stroke-dasharray="0 100"/>
+        </svg>
+        <div class="leitura">
+          <span id="gRpmVal" class="numero">--</span>
+          <span class="unidade">rpm</span>
+        </div>
+        <h2>Rotação</h2>
+      </div>
+
+      <div class="painel diagnostico">
+        <h2>Diagnóstico</h2>
+        <div class="mil">
+          <span id="milDot" class="mil-ponto"></span>
+          <span id="milText">Luz de injeção: --</span>
+        </div>
+        <ul id="dtcList" class="dtc-lista"><li class="vazio">Sem leitura ainda</li></ul>
+        <button id="btnDtc" disabled>Ler códigos de falha</button>
+        <p class="nota">Só leitura: esta página não apaga códigos nem escreve nada no carro.</p>
+      </div>
+    </section>
+
+    <div id="grupos"></div>
+
+    <section class="painel sessao">
+      <h2>Veículo e sessão</h2>
+      <dl>
+        <div><dt>VIN</dt><dd id="iVin">--</dd></div>
+        <div><dt>Módulos</dt><dd id="iModules">--</dd></div>
+        <div><dt>Protocolo</dt><dd id="iProto">--</dd></div>
+        <div><dt>Adaptador</dt><dd id="iAdapter">--</dd></div>
+        <div><dt>Modo de leitura</dt><dd id="iMode">--</dd></div>
+        <div><dt>RPM e velocidade</dt><dd id="iHz">--</dd></div>
+        <div><dt>Última latência</dt><dd id="iLat">--</dd></div>
+        <div><dt>Transações / erros</dt><dd id="iCount">--</dd></div>
+      </dl>
+      <details id="logBox">
+        <summary>Últimas transações com o adaptador</summary>
+        <pre id="log"></pre>
+      </details>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
