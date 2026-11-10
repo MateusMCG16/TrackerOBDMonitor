@@ -22,6 +22,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import br.com.tracker.obd.data.DataGroup
 import br.com.tracker.obd.ui.*
 import br.com.tracker.obd.ui.theme.Graphite
 import br.com.tracker.obd.ui.theme.TrackerTheme
@@ -44,7 +45,17 @@ class MainActivity : ComponentActivity() {
                 // Saveable: the session survives rotation in the ViewModel, so the
                 // destination the user was looking at should survive it too.
                 var tab by rememberSaveable { mutableStateOf(Tab.INSTRUMENTS) }
+                var dataTopic by rememberSaveable { mutableStateOf(DataTopic.MOTOR) }
                 var showConnection by rememberSaveable { mutableStateOf(false) }
+                // Only the screen on display is read: Instruments keeps the link for speed and RPM.
+                LaunchedEffect(tab, dataTopic) {
+                    model.focus(when (tab) {
+                        Tab.INSTRUMENTS -> emptySet()
+                        Tab.DATA -> setOf(dataTopic.group)
+                        Tab.DIAGNOSTICS -> setOf(DataGroup.HISTORY)
+                        Tab.HELP -> setOf(DataGroup.VEHICLE)
+                    })
+                }
                 val context = LocalContext.current
                 val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                     if (granted) model.refreshDevices() else model.permissionDenied()
@@ -70,6 +81,7 @@ class MainActivity : ComponentActivity() {
                         Tab.INSTRUMENTS -> InstrumentsScreen(state, link,
                             onConnect = { showConnection = true; refresh() },
                             onDemo = model::demo, onDisconnect = model::disconnect, modifier = fill)
+                        Tab.DATA -> DataScreen(state, dataTopic, onTopic = { dataTopic = it }, modifier = fill)
                         Tab.DIAGNOSTICS -> DiagnosticsScreen(state, onRead = model::readDtc, modifier = fill)
                         Tab.HELP -> HelpScreen(state, modifier = fill)
                     }

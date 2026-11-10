@@ -25,6 +25,7 @@ import br.com.tracker.obd.ui.theme.*
  */
 private enum class Topic(val chip: String, val title: String) {
     SESSION("Sessão", "ESTA SESSÃO"),
+    VEHICLE("Veículo", "VEÍCULO E ADAPTADOR"),
     READING("Como ler", "COMO LER O CÓDIGO"),
     SCOPE("O que faz", "O QUE O DIAGNÓSTICO FAZ"),
     LIMITS("Limites", "LIMITES CONHECIDOS")
@@ -37,20 +38,7 @@ private enum class Topic(val chip: String, val title: String) {
 
         ScreenHeader("TRACKER / AJUDA", "Ajuda e sessão", "Somente leitura • veículo parado")
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Topic.entries.forEach { entry ->
-                val selected = entry == topic
-                Surface(onClick = { topic = entry }, modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (selected) Color(0xFF1B2A3E) else Panel,
-                    border = androidx.compose.foundation.BorderStroke(1.dp,
-                        if (selected) Cyan.copy(alpha = 0.5f) else Color(0xFF263449))) {
-                    Text(entry.chip, color = if (selected) Cyan else Muted, fontSize = 11.sp, maxLines = 1,
-                        modifier = Modifier.padding(vertical = 9.dp), textAlign =
-                            androidx.compose.ui.text.style.TextAlign.Center)
-                }
-            }
-        }
+        ChipRow(Topic.entries.map { it.chip }, topic.ordinal) { topic = Topic.entries[it] }
 
         BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
             val dense = maxHeight < 320.dp
@@ -73,6 +61,16 @@ private enum class Topic(val chip: String, val title: String) {
                         else state.warnings.forEach { Bullet(it, body, line, Warning) }
                         Para("Hz conta somente respostas válidas; a animação não cria medições.", body, line)
                     }
+                    Topic.VEHICLE -> {
+                        val v = state.vehicle
+                        Metric("VIN", v.vin ?: if (state.live) "lendo…" else "abra com a sessão ativa")
+                        Metric("Módulos", v.modules?.let { "$it responderam ao OBD" } ?: "--")
+                        Metric("Protocolo", v.protocol ?: "--")
+                        Metric("Adaptador", v.adapter ?: "--")
+                        Para("O VIN é lido do carro e aparece só aqui; nada é enviado para fora do telefone.", body, line)
+                        Para("As telas de Dados leem apenas os valores em exibição; em Instrumentos o " +
+                            "adaptador fica só com velocidade e RPM.", body, line)
+                    }
                     Topic.READING -> {
                         Para("A primeira letra diz qual sistema reportou a falha, e o dígito seguinte diz " +
                             "quem definiu o código — 0 e 2 são da norma SAE, 1 é do fabricante.", body, line)
@@ -83,7 +81,7 @@ private enum class Topic(val chip: String, val title: String) {
                     }
                     Topic.SCOPE -> {
                         Bullet("Pede o modo 01 PID 01 para o estado da luz de injeção e a contagem de códigos.", body, line)
-                        Bullet("Pede o modo 03 para a lista de códigos armazenados.", body, line)
+                        Bullet("Pede os modos 03, 07 e 0A para os códigos confirmados, pendentes e permanentes.", body, line)
                         Bullet("As duas são requisições de leitura: nada é escrito, alterado ou apagado na ECU.", body, line)
                         Bullet("Não existe modo 04 aqui: o aplicativo não apaga códigos nem zera monitores.", body, line)
                     }

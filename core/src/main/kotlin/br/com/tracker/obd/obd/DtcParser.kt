@@ -39,10 +39,11 @@ object DtcParser {
      *
      * An empty list is a legitimate answer: it means no stored codes.
      */
-    fun codes(raw: String, can: Boolean): List<String> {
+    fun codes(raw: String, can: Boolean, reply: String = "43"): List<String> {
         // NO DATA to a mode 03 request is 'nothing stored', not a failure.
+        // Modes 07 and 0A answer in the same layout under 47 and 4A, hence [reply].
         val codes = mutableListOf<String>()
-        for (body in ObdPidParser.bodies(raw, "43")) {
+        for (body in ObdPidParser.bodies(raw, reply)) {
             var data = body.substring(2)
             if (can) {
                 if (data.length < 2) continue

@@ -31,7 +31,8 @@ data class MonitorState(
     val phase: ConnectionPhase = ConnectionPhase.DISCONNECTED,
     val deviceName: String? = null, val message: String? = null, val attempt: Int = 0,
     val telemetry: VehicleTelemetry = VehicleTelemetry(), val warnings: List<String> = emptyList(),
-    val dtc: DtcReport = DtcReport()
+    val dtc: DtcReport = DtcReport(),
+    val extras: ExtraTelemetry = ExtraTelemetry(), val vehicle: VehicleInfo = VehicleInfo()
 ) {
     /** A session the user can cancel or close: anything but idle and failed. */
     val active: Boolean get() = phase != ConnectionPhase.DISCONNECTED && phase != ConnectionPhase.ERROR

@@ -1,6 +1,6 @@
 # Tracker OBD Monitor
 
-Aplicativo Android nativo em Kotlin / Jetpack Compose para velocidade e RPM via ELM327 Bluetooth Classic SPP. Android 8.0+ (API 26). Sem root, internet, BLE ou integração com a central multimídia. Interface em português com painel grafite, azul e ciano, instrumentos animados e layouts para retrato e paisagem.
+Aplicativo Android nativo em Kotlin / Jetpack Compose para velocidade, RPM, dados do motor e códigos de falha via ELM327 Bluetooth Classic SPP. Android 8.0+ (API 26). Sem root, internet, BLE ou integração com a central multimídia. Interface em português com painel grafite, azul e ciano, instrumentos animados e layouts para retrato e paisagem.
 
 ## Abrir e compilar
 
@@ -56,6 +56,16 @@ O botão de configurações Bluetooth permite parear/ativar o rádio. Ao retorna
 - `ObdRepository.queryTrace` conserva as últimas 120 consultas com sensor, horário monotônico, latência e resultado, em memória. Não grava dados pessoais nem faz uploads.
 - A latência inclui envio e espera pela resposta completa. `NO DATA`, `STOPPED`, `?`, mensagens de erro e respostas inválidas não alteram o valor nem a data de uma amostra anterior.
 
+### Dados das telas de detalhe
+
+- Além de velocidade e RPM, o aplicativo lê 33 valores do modo 01 (carga, borboleta, pedal, pressões, trims, temperaturas, sondas, tensões, etanol, histórico desde a limpeza de códigos) e a tensão no adaptador (`ATRV`).
+- **Só a tela em exibição é lida.** Em Instrumentos o adaptador fica apenas com `010C0D` e os 5 Hz valem. Numa tela de detalhe entra **uma** transação extra por ciclo, em rodízio entre os pedidos daquela tela; velocidade e RPM caem para cerca de 3,5 Hz enquanto ela estiver aberta.
+- Os pedidos de detalhe usam vários PIDs por mensagem, o que só existe em CAN. Em outro protocolo as telas de detalhe ficam vazias e dizem o motivo.
+- Os grupos de PIDs são fixos e foram enviados ao veículo em 09/11/2026 com o clone v2.1: pedidos de 2 e 3 PIDs cuja resposta cabe em um quadro CAN funcionam; **um pedido de 4 PIDs reinicia esse clone**. Um teste impede que um grupo novo passe desse limite.
+- As máscaras `0120`, `0140`, `0160` e `0180` são lidas na primeira vez que uma tela de detalhe abre; um grupo só é pedido se o veículo anuncia ao menos um dos seus PIDs, e o que não é anunciado aparece como "sem suporte".
+- Com os cabeçalhos desligados, dois módulos que respondem ao mesmo pedido são distinguidos pelo conteúdo: a resposta com mais PIDs é a do motor. É assim que a tensão do módulo (PID 42) é separada entre motor e câmbio.
+- Um valor de detalhe fica esmaecido 8 s depois da última leitura válida.
+
 **5 Hz é uma meta, não uma garantia.** A capacidade do clone, do Bluetooth e da ECU determina a taxa real. A escala do velocímetro é de 0 a 220 km/h; valores medidos maiores continuam aparecendo numericamente e o arco satura. A escala de RPM vai de 0 a 8.000. A marca de 6.500 a 8.000 é somente ilustrativa e não representa o limite do motor da Tracker.
 
 ## Protocolo e falhas
@@ -82,17 +92,24 @@ As leituras ficam desatualizadas após `max(1,5 s, min(5 s, 6 × intervalo entre
 
 ## Telas
 
-Três destinos numa barra inferior, **nenhum deles rola**: cada tela ocupa exatamente uma altura de tela e o conteúdo se ajusta ao espaço disponível.
+Quatro destinos numa barra inferior, **nenhum deles rola**: cada tela ocupa exatamente uma altura de tela e o conteúdo se ajusta ao espaço disponível.
 
 ```text
 Instrumentos   cabeçalho + velocímetro + conta-giros + botões de sessão
-Diagnóstico    estado da luz de injeção, lista de códigos, botão de leitura
-Ajuda          sessão, como ler o código, o que o diagnóstico faz, limites
+Dados          quatro telas atrás de uma linha de chips:
+                 Motor         carga, borboleta, pedal, avanço, tempo desde a partida
+                 Mistura       pressões, fluxo de ar, lambda, trims, tanque, etanol, purga
+                 Temperatura   arrefecimento, catalisador, ar de admissão, ar ambiente
+                 Elétrica      sondas lambda, tensão no motor, no câmbio e no adaptador
+Diagnóstico    luz de injeção, histórico desde a limpeza, lista de códigos, botão de leitura
+Ajuda          sessão, veículo, como ler o código, o que o diagnóstico faz, limites
 ```
 
+- Nas telas de Dados cada valor é um cartão; a grade divide a altura livre em linhas iguais e o tamanho do texto sai da altura da linha. Em tela baixa o cartão passa a mostrar rótulo e valor lado a lado em vez de empilhados. Os tamanhos são definidos em dp, então a escala de fonte do sistema não estoura um cartão.
+- Em telas de 680 dp ou mais a grade usa quatro colunas em vez de duas. Um último valor ímpar ocupa a linha inteira.
 - Os dois instrumentos dividem a altura livre (`weight(1f)` cada). O mostrador, os números e as marcações se dimensionam pelo espaço medido — não há proporção fixa. Em telas de 680 dp ou mais eles ficam lado a lado.
 - A seleção de adaptador continua sendo um diálogo sobre a tela atual, não um destino.
-- A aba Ajuda divide o texto em quatro tópicos atrás de uma linha de chips: só o tópico escolhido é composto, e em telas baixas a escala de tipografia se aperta em vez de a página crescer.
+- A aba Ajuda divide o texto em cinco tópicos atrás de uma linha de chips: só o tópico escolhido é composto, e em telas baixas a escala de tipografia se aperta em vez de a página crescer.
 - A aba mostra um ponto âmbar quando há código de falha (Diagnóstico) ou aviso do adaptador (Ajuda).
 - A aba escolhida é `rememberSaveable`: sobrevive à rotação, como a sessão no ViewModel. O botão voltar do sistema retorna a Instrumentos.
 - **Uma única região rola**: a lista de códigos de falha, cujo tamanho o aplicativo não controla. Com muitos códigos armazenados, a lista rola dentro do seu quadro; a tela em si não.
@@ -104,7 +121,7 @@ app/src/main/java/br/com/tracker/obd/
   MainActivity.kt                 permissões, ciclo de vida, tema, abas
   bluetooth/                      RFCOMM, socket, leitor assíncrono limitado
   viewmodel/                      DashboardViewModel / StateFlow
-  ui/                             Navigation, três telas, seleção e tema
+  ui/                             Navigation, quatro destinos, seleção e tema
 core/src/main/kotlin/br/com/tracker/obd/
   data/                           modelos, relógio, idade e Hz
   obd/                            lista de comandos, ELM, parser, scheduler, repositório
@@ -117,8 +134,15 @@ core/src/test/kotlin/br/com/tracker/obd/
 
 ## Segurança e limites de validação
 
-A lista fechada `ElmCommand` contém somente os seis comandos AT de configuração, `ATDPN` (que apenas lê o número do protocolo), `0100`, `010C`, `010D` e `010C0D`. Não há ECU write, limpeza de falhas, atuadores, fuzzing, CAN bruto, terminal ou comando personalizado. Não existe permissão `INTERNET` no manifesto.
+A lista fechada `ElmCommand` contém somente leituras:
+
+- os seis comandos AT de configuração, `ATDPN` (lê o número do protocolo) e `ATRV` (lê a tensão no próprio adaptador);
+- modo 01: as máscaras `0100`, `0120`, `0140`, `0160` e `0180`, os pedidos `010C`, `010D` e `010C0D`, o estado `0101` e os quinze grupos das telas de detalhe;
+- modos `03`, `07` e `0A`: códigos confirmados, pendentes e permanentes;
+- modo 09: apenas `0902` (VIN). O `0904` ficou de fora de propósito: a resposta longa reinicia o clone v2.1.
+
+Um teste falha se a lista ganhar um comando fora desses modos. Não há modo 04, ECU write, limpeza de falhas, atuadores, troca de sessão, `ATSH`, fuzzing, CAN bruto, terminal ou comando personalizado. O VIN aparece só na tela de Ajuda e não é gravado nem enviado. Não existe permissão `INTERNET` no manifesto.
 
 Não interaja com o aplicativo durante a condução. Compatibilidade com a Tracker 2022 e o clone ELM327 específico precisa ser confirmada no veículo: os testes automatizados usam transportes simulados e não substituem essa verificação. O app mostra somente as medições recebidas, sem afirmar frequência garantida, precisão de instrumentos originais ou limite real do motor.
 
-Os comandos executados e o resultado real da compilação e testes desta entrega estão em `VALIDATION.md`.
+Os comandos executados e o resultado real da compilação e testes da entrega de 21/10/2026 estão em `VALIDATION.md`; as telas de detalhe são posteriores a esse registro.
