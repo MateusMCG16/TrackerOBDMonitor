@@ -30,7 +30,7 @@ import br.com.tracker.obd.ui.theme.*
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)) {
 
-            ScreenHeader("Tracker / Instrumentos", "Tracker OBD Monitor",
+            ScreenHeader("Tracker / Instrumentos", "TOBD Monitor",
                 if (state.phase == ConnectionPhase.DEMO) "Simulador local • sem veículo"
                 else "Bluetooth ${linkLabel(link)} • ${state.deviceName ?: "nenhum dispositivo"}",
                 trailing = { ConnectionStatus(state.phase) })

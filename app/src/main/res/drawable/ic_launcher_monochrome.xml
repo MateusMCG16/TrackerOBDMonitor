@@ -1,0 +1,16 @@
+<!-- Mesma forma em uma cor só, para o ícone temático do Android 13+. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:scaleX="0.8" android:scaleY="0.8" android:pivotX="54" android:pivotY="54">
+        <path android:strokeColor="#FFFFFFFF" android:strokeWidth="6" android:strokeLineJoin="round"
+            android:pathData="M24,38H84L76,72H32Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="
+            M38,50m-3.5,0a3.5,3.5 0,1 0,7 0a3.5,3.5 0,1 0,-7 0
+            M49,50m-3.5,0a3.5,3.5 0,1 0,7 0a3.5,3.5 0,1 0,-7 0
+            M60,50m-3.5,0a3.5,3.5 0,1 0,7 0a3.5,3.5 0,1 0,-7 0
+            M71,50m-3.5,0a3.5,3.5 0,1 0,7 0a3.5,3.5 0,1 0,-7 0
+            M42,61m-3.5,0a3.5,3.5 0,1 0,7 0a3.5,3.5 0,1 0,-7 0
+            M54,61m-3.5,0a3.5,3.5 0,1 0,7 0a3.5,3.5 0,1 0,-7 0
+            M66,61m-3.5,0a3.5,3.5 0,1 0,7 0a3.5,3.5 0,1 0,-7 0" />
+    </group>
+</vector>
