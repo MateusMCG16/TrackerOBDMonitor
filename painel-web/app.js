@@ -74,30 +74,44 @@ for (const g of [FAST, ...MEDIUM, ...SLOW]) {
 
 /* ---------- o que aparece na tela ---------- */
 
+// [chave, rótulo, unidade, casas, PID que traz o valor (null = adaptador), complemento do rótulo]
 const GROUPS = [
   ['Motor', [
-    ['load', 'Carga calculada', '%', 0], ['absLoad', 'Carga absoluta', '%', 0], ['timing', 'Avanço de ignição', '°', 1],
-    ['throttle', 'Borboleta', '%', 0], ['throttleCmd', 'Borboleta comandada', '%', 0], ['relThrottle', 'Borboleta relativa', '%', 0],
-    ['pedalD', 'Pedal D', '%', 0], ['pedalE', 'Pedal E', '%', 0], ['runtime', 'Tempo desde a partida', 'tempo', 0]
+    ['load', 'Carga calculada', '%', 0, 0x04], ['absLoad', 'Carga absoluta', '%', 0, 0x43], ['timing', 'Avanço de ignição', '°', 1, 0x0E],
+    ['throttle', 'Borboleta', '%', 0, 0x11], ['throttleCmd', 'Borboleta', '%', 0, 0x4C, 'comandada'], ['relThrottle', 'Borboleta', '%', 0, 0x45, 'relativa'],
+    ['pedalD', 'Pedal', '%', 0, 0x49, 'sensor D'], ['pedalE', 'Pedal', '%', 0, 0x4A, 'sensor E'], ['runtime', 'Desde a partida', 'tempo', 0, 0x1F]
   ]],
   ['Ar e combustível', [
-    ['map', 'Pressão do coletor', 'kPa', 1], ['baro', 'Pressão barométrica', 'kPa', 0], ['maf', 'Fluxo de ar', 'g/s', 2],
-    ['stft', 'Trim curto', '%', 1], ['ltft', 'Trim longo', '%', 1], ['lambda', 'Lambda comandada', '', 3],
-    ['fuelPress', 'Pressão de combustível', 'kPa', 0], ['fuelLevel', 'Nível do tanque', '%', 0], ['ethanol', 'Etanol no combustível', '%', 0],
-    ['purge', 'Purga do cânister', '%', 0], ['fuelSys', 'Sistema de combustível', 'texto', 0]
+    ['map', 'Pressão do coletor', 'kPa', 1, 0x87], ['baro', 'Pressão barométrica', 'kPa', 0, 0x33], ['maf', 'Fluxo de ar', 'g/s', 2, 0x10],
+    ['stft', 'Trim curto', '%', 1, 0x06], ['ltft', 'Trim longo', '%', 1, 0x07], ['lambda', 'Lambda', '', 3, 0x44, 'comandada'],
+    ['fuelPress', 'Pressão de combustível', 'kPa', 0, 0x0A], ['fuelLevel', 'Tanque', '%', 0, 0x2F], ['ethanol', 'Etanol', '%', 0, 0x52],
+    ['purge', 'Purga do cânister', '%', 0, 0x2E], ['fuelSys', 'Sistema de combustível', 'texto', 0, 0x03]
   ]],
   ['Temperaturas', [
-    ['coolant', 'Arrefecimento', '°C', 0], ['iat', 'Ar de admissão', '°C', 0], ['iat2', 'Ar de admissão (sensor 2)', '°C', 0],
-    ['ambient', 'Ar ambiente', '°C', 0], ['catTemp', 'Catalisador', '°C', 0]
+    ['coolant', 'Arrefecimento', '°C', 0, 0x05], ['iat', 'Ar de admissão', '°C', 0, 0x0F], ['iat2', 'Ar de admissão', '°C', 0, 0x68, 'sensor 2'],
+    ['ambient', 'Ar ambiente', '°C', 0, 0x46], ['catTemp', 'Catalisador', '°C', 0, 0x3C]
   ]],
   ['Sondas e elétrica', [
-    ['o2s1', 'Sonda 1 (antes do catalisador)', 'V', 2], ['o2s2', 'Sonda 2 (depois do catalisador)', 'V', 2],
-    ['vEcm', 'Tensão no motor (ECM)', 'V', 2], ['vTcm', 'Tensão no câmbio (TCM)', 'V', 2], ['vAdapter', 'Tensão no adaptador', 'V', 1]
+    ['o2s1', 'Sonda 1', 'V', 2, 0x14, 'pré-catalisador'], ['o2s2', 'Sonda 2', 'V', 2, 0x15, 'pós-catalisador'],
+    ['vEcm', 'Tensão', 'V', 2, 0x42, 'motor (ECM)'], ['vTcm', 'Tensão', 'V', 2, 0x42, 'câmbio (TCM)'], ['vAdapter', 'Tensão', 'V', 1, null, 'adaptador']
   ]],
   ['Desde a última limpeza de códigos', [
-    ['distSinceClear', 'Distância percorrida', 'km', 0], ['warmups', 'Aquecimentos', '', 0], ['distMil', 'Distância com a luz acesa', 'km', 0]
+    ['distSinceClear', 'Distância percorrida', 'km', 0, 0x31], ['warmups', 'Aquecimentos', '', 0, 0x30], ['distMil', 'Com a luz acesa', 'km', 0, 0x21]
   ]]
 ];
+
+// Faixas que pedem atenção. Só mudam a cor; nenhuma decisão é tomada a partir delas.
+const volts = v => v < 11.5 || v > 15.5 ? 'danger' : v < 12.2 || v > 15 ? 'attention' : '';
+const LEVEL = {
+  coolant: v => v >= 115 ? 'danger' : v >= 105 ? 'attention' : '',
+  catTemp: v => v >= 950 ? 'danger' : v >= 850 ? 'attention' : '',
+  stft: v => Math.abs(v) >= 20 ? 'danger' : Math.abs(v) >= 10 ? 'attention' : '',
+  ltft: v => Math.abs(v) >= 20 ? 'danger' : Math.abs(v) >= 10 ? 'attention' : '',
+  fuelLevel: v => v < 8 ? 'danger' : v < 15 ? 'attention' : '',
+  distMil: v => v > 0 ? 'attention' : '',
+  vEcm: volts, vTcm: volts, vAdapter: volts
+};
+const NO_BAR = new Set(['stft', 'ltft']);
 
 /* ---------- estado ---------- */
 
@@ -116,13 +130,24 @@ function setSignal(key, v) { state.signals[key] = { v, t: performance.now() }; }
 function setStatus(text, cls) {
   const el = $('status');
   el.textContent = text;
-  el.className = 'status' + (cls ? ' ' + cls : '');
+  el.className = 'state-label' + ({ ok: ' success', erro: ' danger' }[cls] || '');
 }
 
-function warn(text) {
+function warn(text, kind = 'warning') {
   const el = $('aviso');
   el.hidden = !text;
-  el.textContent = text || '';
+  el.className = 'banner banner-' + kind;
+  el.querySelector('use').setAttribute('href', kind === 'info' ? '#i-info' : '#i-alert');
+  $('avisoText').textContent = text || '';
+}
+
+// Mantém a tela do notebook acesa durante a leitura (quando o navegador permite).
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on && 'wakeLock' in navigator && !wakeLock) wakeLock = await navigator.wakeLock.request('screen');
+    if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (e) { wakeLock = null; }
 }
 
 /* ---------- interpretação das respostas ---------- */
@@ -436,6 +461,7 @@ async function run(transport, demo) {
   warn('');
   $('btnConnect').hidden = $('btnDemo').hidden = true;
   $('btnStop').hidden = false;
+  keepAwake(true);
   let finalStatus = ['Desconectado', ''];
   try {
     setStatus(demo ? 'Iniciando simulação…' : 'Escolha a porta do adaptador…');
@@ -508,6 +534,7 @@ async function run(transport, demo) {
     else finalStatus = ['Conexão encerrada: ' + (e && e.message ? e.message : e), 'erro'];
   } finally {
     state.running = false;
+    keepAwake(false);
     await transport.close();
     state.transport = null;
     $('btnConnect').hidden = $('btnDemo').hidden = false;
@@ -519,83 +546,158 @@ async function run(transport, demo) {
 
 /* ---------- tela ---------- */
 
-function buildCards() {
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const NS = 'http://www.w3.org/2000/svg';
+
+function svgEl(parent, tag, attrs, text) {
+  const el = document.createElementNS(NS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  if (text != null) el.textContent = text;
+  parent.appendChild(el);
+  return el;
+}
+
+// Mostrador de 270°: começa embaixo à esquerda e termina embaixo à direita.
+const polar = (f, r) => { const a = (135 + 270 * f) * Math.PI / 180; return [100 + r * Math.cos(a), 100 + r * Math.sin(a)]; };
+const arcPath = (f0, f1, r) => {
+  const [x0, y0] = polar(f0, r), [x1, y1] = polar(f1, r);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${(f1 - f0) * 270 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+};
+
+const gauges = {};
+function buildGauge(id, { key, max, minor, major, fmt, unit, cls, red }) {
+  const svg = $(id);
+  svgEl(svg, 'path', { class: 'track', d: arcPath(0, 1, 80) });
+  if (red) svgEl(svg, 'path', { class: 'red', d: arcPath(red / max, 1, 93) });
+  for (let v = 0; v <= max + 1e-9; v += minor) {
+    const f = v / max, isMajor = Math.abs(v / major - Math.round(v / major)) < 1e-9;
+    const [x0, y0] = polar(f, isMajor ? 61 : 64), [x1, y1] = polar(f, 69);
+    svgEl(svg, 'line', { class: 'tick' + (isMajor ? ' major' : ''), x1: x0.toFixed(2), y1: y0.toFixed(2), x2: x1.toFixed(2), y2: y1.toFixed(2) });
+    if (isMajor) { const [lx, ly] = polar(f, 51); svgEl(svg, 'text', { class: 'tick-label', x: lx.toFixed(2), y: ly.toFixed(2) }, fmt(v)); }
+  }
+  const fill = svgEl(svg, 'path', { class: 'fill ' + cls, d: arcPath(0, 1, 80), pathLength: 100, 'stroke-dasharray': '0 100', visibility: 'hidden' });
+  const value = svgEl(svg, 'text', { class: 'value waiting', x: 100, y: 126 }, 'sem leitura');
+  svgEl(svg, 'text', { class: 'unit', x: 100, y: 146 }, unit);
+  gauges[id] = { svg, fill, value, key, max, cls, red };
+}
+
+function renderGauge(id, now) {
+  const g = gauges[id], sig = state.signals[g.key];
+  if (!sig) {
+    g.fill.setAttribute('visibility', 'hidden');
+    g.value.setAttribute('class', 'value waiting');
+    g.value.textContent = state.running ? 'aguardando…' : 'sem leitura';
+    g.svg.classList.remove('stale');
+    return;
+  }
+  const f = Math.max(0, Math.min(1, sig.v / g.max));
+  g.fill.setAttribute('visibility', f > 0.004 ? 'visible' : 'hidden');
+  g.fill.setAttribute('stroke-dasharray', `${(f * 100).toFixed(1)} 100`);
+  g.fill.setAttribute('class', 'fill ' + (g.red && sig.v >= g.red ? 'redzone' : g.cls));
+  g.value.setAttribute('class', 'value');
+  g.value.textContent = Math.round(sig.v);
+  g.svg.classList.toggle('stale', now - sig.t > 3000);
+}
+
+const META = Object.fromEntries(GROUPS.flatMap(g => g[1]).map(([key, label, unit, dp, pid, sub]) => [key, { label, unit, dp, pid, sub }]));
+const STALE_MS = 15000;
+
+function buildGroups() {
   const root = $('grupos');
   for (const [title, items] of GROUPS) {
-    const sec = document.createElement('section');
-    sec.className = 'grupo';
-    sec.innerHTML = `<h2>${title}</h2><div class="grade"></div>`;
-    const grid = sec.querySelector('.grade');
-    for (const [key, label, unit] of items) {
-      const card = document.createElement('div');
-      card.className = 'cartao ausente' + (unit === 'texto' ? ' texto' : '');
-      card.dataset.key = key;
-      card.innerHTML = `<div class="rotulo">${label}</div><div class="valor">--</div>`;
-      grid.appendChild(card);
+    const box = document.createElement('section');
+    box.className = 'box';
+    box.innerHTML = `<div class="box-header"><h2>${esc(title)}</h2><span class="counter"></span></div><div class="tiles"></div><div class="box-footer missing" hidden></div>`;
+    const grid = box.querySelector('.tiles');
+    for (const [key, label, unit, , , sub] of items) {
+      const tile = document.createElement('div');
+      tile.className = 'tile' + (unit === 'texto' ? ' text wide' : '');
+      tile.dataset.key = key;
+      const bar = unit === '%' && !NO_BAR.has(key) ? '<div class="bar"><span></span></div>' : '';
+      tile.innerHTML = `<div class="name">${esc(label)}${sub ? ` <small>${esc(sub)}</small>` : ''}</div><div class="val waiting">sem leitura</div>${bar}`;
+      grid.appendChild(tile);
     }
-    root.appendChild(sec);
+    root.appendChild(box);
   }
 }
 
-const UNITS = Object.fromEntries(GROUPS.flatMap(g => g[1]).map(([key, , unit, dp]) => [key, { unit, dp }]));
-const STALE_MS = 15000;
-
 function formatValue(key, v) {
-  const { unit, dp } = UNITS[key];
-  if (unit === 'texto') return v;
+  const { unit, dp } = META[key];
+  if (unit === 'texto') return esc(v);
   if (unit === 'tempo') { const m = Math.floor(v / 60), s = Math.floor(v % 60); return `${m}:${String(s).padStart(2, '0')}<small>min</small>`; }
-  return v.toFixed(dp).replace('.', ',') + (unit ? `<small>${unit}</small>` : '');
+  let t = v.toLocaleString('pt-BR', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+  if (/^-0(,0*)?$/.test(t)) t = t.slice(1);
+  return t + (unit ? `<small>${unit}</small>` : '');
 }
 
-function renderGauge(key, arcId, valId, max) {
-  const sig = state.signals[key];
-  const box = $(valId).closest('.mostrador');
-  if (!sig) { $(valId).textContent = '--'; $(arcId).setAttribute('stroke-dasharray', '0 100'); box.classList.remove('velho'); return; }
-  $(valId).textContent = Math.round(sig.v);
-  $(arcId).setAttribute('stroke-dasharray', `${Math.max(0, Math.min(100, sig.v / max * 100)).toFixed(1)} 100`);
-  box.classList.toggle('velho', performance.now() - sig.t > 3000);
-}
+// Um sinal some da tela quando o carro já disse quais PIDs suporta e o dele não está na lista.
+const unsupported = key => { const p = META[key].pid; return state.supported.size > 0 && p != null && !state.supported.has(p); };
+
+let showVin = false;
 
 function render() {
   const now = performance.now();
-  renderGauge('speed', 'gSpeedArc', 'gSpeedVal', 220);
-  renderGauge('rpm', 'gRpmArc', 'gRpmVal', 8000);
+  renderGauge('gSpeed', now);
+  renderGauge('gRpm', now);
 
-  for (const card of document.querySelectorAll('.cartao')) {
-    const sig = state.signals[card.dataset.key];
-    card.classList.toggle('ausente', !sig);
-    card.classList.toggle('velho', !!sig && now - sig.t > STALE_MS);
-    const html = sig ? formatValue(card.dataset.key, sig.v) : '--';
-    const el = card.querySelector('.valor');
-    if (el.innerHTML !== html) el.innerHTML = html;
+  for (const box of $('grupos').children) {
+    let shown = 0, live = 0;
+    const missing = [];
+    for (const tile of box.querySelectorAll('.tile')) {
+      const key = tile.dataset.key, sig = state.signals[key], meta = META[key];
+      const gone = !sig && unsupported(key);
+      tile.hidden = gone;
+      if (gone) { missing.push(meta.sub ? `${meta.label} (${meta.sub})` : meta.label); continue; }
+      shown++;
+      if (sig) live++;
+      const level = sig && LEVEL[key] && typeof sig.v === 'number' ? LEVEL[key](sig.v) : '';
+      tile.className = 'tile' + (meta.unit === 'texto' ? ' text wide' : '') + (level ? ' ' + level : '') + (sig && now - sig.t > STALE_MS ? ' stale' : '');
+      const val = tile.querySelector('.val');
+      const html = sig ? formatValue(key, sig.v) : state.running ? 'aguardando…' : 'sem leitura';
+      if (val.innerHTML !== html) val.innerHTML = html;
+      val.classList.toggle('waiting', !sig);
+      const bar = tile.querySelector('.bar span');
+      if (bar) bar.style.width = sig ? Math.max(0, Math.min(100, sig.v)).toFixed(1) + '%' : '0';
+    }
+    box.querySelector('.counter').textContent = state.running || live ? `${live} de ${shown}` : shown;
+    const foot = box.querySelector('.missing');
+    foot.hidden = !missing.length;
+    if (missing.length) foot.textContent = 'O carro não informa: ' + missing.join(', ') + '.';
   }
 
   // Luz de injeção e contagem, somando as centrais que responderam ao 0101
   const mils = Object.keys(state.signals).filter(k => k.startsWith('mil_'));
-  const dot = $('milDot');
-  if (!mils.length) { dot.className = 'mil-ponto'; $('milText').textContent = 'Luz de injeção: --'; }
+  const mil = $('milLabel');
+  if (!mils.length) { mil.className = 'state-label'; mil.textContent = 'Luz de injeção: --'; }
   else {
     const on = mils.some(k => state.signals[k].v);
     const count = Object.keys(state.signals).filter(k => k.startsWith('dtcCount_')).reduce((a, k) => a + state.signals[k].v, 0);
-    dot.className = 'mil-ponto ' + (on ? 'acesa' : 'apagada');
-    $('milText').textContent = `Luz de injeção ${on ? 'ACESA' : 'apagada'} · ${count} código${count === 1 ? '' : 's'} confirmado${count === 1 ? '' : 's'}`;
+    mil.className = 'state-label ' + (on ? 'danger' : 'success');
+    mil.textContent = on ? `Luz acesa · ${count} código${count === 1 ? '' : 's'}` : 'Luz apagada';
   }
 
-  const list = $('dtcList');
   let html;
-  if (!state.dtc) html = '<li class="vazio">Sem leitura ainda</li>';
-  else if (!state.dtc.list.length) html = `<li class="vazio">Nenhum código confirmado, pendente ou permanente (lido às ${new Date(state.dtc.t).toLocaleTimeString('pt-BR')})</li>`;
-  else html = state.dtc.list.map(d => `<li><b>${d.code}</b><span>${d.kind} · central ${d.ecu}</span></li>`).join('');
-  if (list.innerHTML !== html) list.innerHTML = html;
+  if (!state.dtc) html = `<div class="blankslate"><svg class="octicon"><use href="#i-info"/></svg><b>Sem leitura ainda</b><span>${state.running ? 'Lendo os códigos…' : 'Os códigos são lidos ao conectar.'}</span></div>`;
+  else if (!state.dtc.list.length) html = `<div class="blankslate ok"><svg class="octicon"><use href="#i-check"/></svg><b>Nenhum código</b><span>Confirmados, pendentes e permanentes · lido às ${new Date(state.dtc.t).toLocaleTimeString('pt-BR')}</span></div>`;
+  else html = '<ul class="dtc-list">' + state.dtc.list.map(d =>
+    `<li><code>${esc(d.code)}</code><span class="label ${({ confirmado: 'danger', pendente: 'attention' })[d.kind] || ''}">${esc(d.kind)}</span><span class="ecu">${({ 11: 'motor', 18: 'câmbio' })[d.ecu] || 'central ' + esc(d.ecu)}</span></li>`).join('') + '</ul>';
+  const area = $('dtcArea');
+  if (area.dataset.html !== html) { area.innerHTML = html; area.dataset.html = html; }
 
   const i = state.info;
-  $('iVin').textContent = i.vin || '--';
+  const vin = i.vin || '';
+  $('btnVin').hidden = !vin;
+  $('iVin').textContent = !vin ? '--' : showVin ? vin : vin.slice(0, 3) + '•'.repeat(Math.max(0, vin.length - 7)) + vin.slice(-4);
+  $('btnVin').textContent = showVin ? 'ocultar' : 'mostrar';
   $('iModules').textContent = i.modules || '--';
   $('iProto').textContent = i.proto || '--';
   $('iAdapter').textContent = i.adapter || '--';
   $('iMode').textContent = !state.running ? '--' : state.singles ? 'Um PID por vez' : 'Pedidos combinados';
   const t = state.rpmTimes.filter(x => x > now - 2000);
-  $('iHz').textContent = t.length >= 2 ? ((t.length - 1) / ((t[t.length - 1] - t[0]) / 1000)).toFixed(1).replace('.', ',') + ' Hz' : '--';
+  const hz = t.length >= 2 ? ((t.length - 1) / ((t[t.length - 1] - t[0]) / 1000)).toFixed(1).replace('.', ',') + ' Hz' : null;
+  $('iHz').textContent = hz || '--';
+  $('hzLabel').hidden = !(state.running && hz);
+  $('hzLabel').textContent = hz || '';
   $('iLat').textContent = state.lastLatency == null ? '--' : state.lastLatency + ' ms';
   $('iCount').textContent = state.txCount ? `${state.txCount} / ${state.errCount}` : '--';
   if ($('logBox').open) $('log').textContent = state.log.slice(-60).join('\n');
@@ -603,17 +705,25 @@ function render() {
 
 /* ---------- início ---------- */
 
-buildCards();
+buildGauge('gSpeed', { key: 'speed', max: 220, minor: 10, major: 40, fmt: v => v, unit: 'km/h', cls: 'speed' });
+buildGauge('gRpm', { key: 'rpm', max: 8000, minor: 500, major: 1000, fmt: v => v / 1000, unit: 'rpm × 1000', cls: 'rpm', red: 6500 });
+buildGroups();
+render();
 setInterval(render, 200);
 
 $('btnConnect').addEventListener('click', () => run(new SerialTransport(), false));
 $('btnDemo').addEventListener('click', () => run(new DemoTransport(), true));
 $('btnStop').addEventListener('click', () => { state.running = false; setStatus('Encerrando…'); });
 $('btnDtc').addEventListener('click', () => { state.wantDtc = true; });
+$('btnVin').addEventListener('click', () => { showVin = !showVin; render(); });
+$('btnFull').addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.running) keepAwake(true); });
 
 if (!('serial' in navigator)) {
   $('btnConnect').disabled = true;
-  warn('Este navegador não tem a Web Serial API. Abra a página no Chrome ou no Edge do computador para conectar ao ELM327; o modo demo funciona em qualquer navegador.');
+  warn('Este navegador não tem a Web Serial API. Abra a página no Chrome ou no Edge do computador para conectar ao ELM327; o modo demo funciona em qualquer navegador.', 'info');
 }
 
 // Para conferência no console
