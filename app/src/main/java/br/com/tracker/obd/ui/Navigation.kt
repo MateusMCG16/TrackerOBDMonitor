@@ -22,11 +22,12 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * The three destinations. Each one is sized to a single screen: no destination
+ * The four destinations. Each one is sized to a single screen: no destination
  * scrolls, so the enum is also the contract that the content must fit.
  */
 enum class Tab(val label: String) {
     INSTRUMENTS("Instrumentos"),
+    DATA("Dados"),
     DIAGNOSTICS("Diagnóstico"),
     HELP("Ajuda")
 }
@@ -68,6 +69,7 @@ enum class Tab(val label: String) {
     Canvas(Modifier.size(22.dp)) {
         when (tab) {
             Tab.INSTRUMENTS -> dialGlyph(color)
+            Tab.DATA -> barsGlyph(color)
             Tab.DIAGNOSTICS -> engineGlyph(color)
             Tab.HELP -> helpGlyph(color)
         }
@@ -83,6 +85,14 @@ private fun DrawScope.dialGlyph(color: Color) {
     drawLine(color, center, center + androidx.compose.ui.geometry.Offset(
         (cos(angle) * size.width * 0.33f).toFloat(), (sin(angle) * size.height * 0.33f).toFloat()),
         size.width * 0.1f, cap = StrokeCap.Round)
+}
+
+private fun DrawScope.barsGlyph(color: Color) {
+    val w = size.width
+    val h = size.height
+    for ((x, top) in listOf(0.24f to 0.52f, 0.50f to 0.22f, 0.76f to 0.38f))
+        drawLine(color, androidx.compose.ui.geometry.Offset(w * x, h * 0.82f),
+            androidx.compose.ui.geometry.Offset(w * x, h * top), w * 0.13f, cap = StrokeCap.Round)
 }
 
 private fun DrawScope.engineGlyph(color: Color) {
@@ -115,10 +125,28 @@ private fun DrawScope.helpGlyph(color: Color) {
         androidx.compose.ui.geometry.Offset(size.width * 0.50f, size.height * 0.72f))
 }
 
+/** Topics inside one destination: equal-width chips, so the row is one line at any width. */
+@Composable fun ChipRow(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        labels.forEachIndexed { index, label ->
+            val active = index == selected
+            Surface(onClick = { onSelect(index) }, modifier = Modifier.weight(1f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                color = if (active) Color(0xFF1B2A3E) else Panel,
+                border = androidx.compose.foundation.BorderStroke(1.dp,
+                    if (active) Cyan.copy(alpha = 0.5f) else Color(0xFF263449))) {
+                Text(label, color = if (active) Cyan else Muted, fontSize = 11.sp, maxLines = 1,
+                    softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 9.dp, horizontal = 2.dp))
+            }
+        }
+    }
+}
+
 /** The one-line header every destination shows, so no screen spends height on a title block. */
 @Composable fun ScreenHeader(eyebrow: String, title: String, subtitle: String, accent: Color = Cyan) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(eyebrow, color = accent, fontSize = 9.sp, letterSpacing = 2.5.sp)
+        Text(eyebrow, color = accent, fontSize = 9.sp, letterSpacing = 2.5.sp, maxLines = 1)
         Text(title, fontSize = 19.sp, style = MaterialTheme.typography.titleLarge)
         Text(subtitle, color = Muted, fontSize = 11.sp, maxLines = 1)
     }

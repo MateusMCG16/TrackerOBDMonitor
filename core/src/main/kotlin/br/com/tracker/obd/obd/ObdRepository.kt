@@ -14,6 +14,17 @@ fun interface TransportConnector { suspend fun connect(address: String): ElmTran
 /** Not an IOException: it ends the combined mode, never the Bluetooth session. */
 private class CombinedUnsupported : Exception()
 
+/** A detail value is re-read every few seconds at worst; older than this it is shown as stale. */
+private const val DETAIL_VALID_MS = 8000L
+
+/** What one Bluetooth session has learned for the detail screens. */
+private class Details(val pids: MutableSet<Int>) {
+    var masksRead = false
+    var can: Boolean? = null
+    var identified = false
+    var cursor = 0
+}
+
 class ObdRepository(
     private val scope: CoroutineScope, private val connector: TransportConnector,
     private val clock: MonotonicClock = SystemMonotonicClock
@@ -26,6 +37,7 @@ class ObdRepository(
     @Volatile private var active: Elm327Client? = null
     @Volatile private var meters = Sensor.entries.associateWith { FrequencyMeter() }
     private val dtcRequested = AtomicBoolean(false)
+    @Volatile private var focus: Set<DataGroup> = emptySet()
     private val ticker = scope.launch { while (isActive) { tick(); delay(100) } }
 
     private fun replace(initial: MonitorState, work: suspend CoroutineScope.() -> Unit) {
@@ -56,15 +68,20 @@ class ObdRepository(
                 mutable.update { it.copy(phase = ConnectionPhase.CONNECTED, message = "Configurando ELM327…") }
                 val warnings = client.initialize()
                 mutable.update { it.copy(phase = ConnectionPhase.WAITING, message = "Verificando suporte aos PIDs…", warnings = warnings) }
-                val supported = ObdPidParser.supported(client.execute(ElmCommand.SUPPORTED))
+                val supportRaw = client.execute(ElmCommand.SUPPORTED)
+                val supported = ObdPidParser.supported(supportRaw)
                 if (supported.isEmpty()) throw ElmProtocolException("Velocidade e RPM não anunciados pelo veículo.")
+                // One 4100 reply per module, so the count is free: no extra request.
+                mutable.update { it.copy(vehicle = it.vehicle.copy(adapter = client.identity,
+                    modules = ObdPidParser.bodies(supportRaw, "4100").size)) }
+                val details = Details(ExtraPids.mask(supportRaw, 0x00).toMutableSet())
                 for (sensor in Sensor.entries.filter { it !in supported }) {
                     mutable.update { state -> state.copy(telemetry = state.telemetry.withSensor(sensor,
                         SensorTelemetry(reading = Reading(issue = "PID não suportado")))) }
                 }
                 mutable.update { it.copy(message = "Aguardando leituras válidas…") }
                 val session = client
-                poll(session, chooseTargets(session, supported), singleTargets(supported))
+                poll(session, chooseTargets(session, supported), singleTargets(supported), details)
                 return@replace
             } catch (e: CancellationException) { throw e }
               catch (e: SecurityException) {
@@ -89,7 +106,8 @@ class ObdRepository(
         return if (ObdPidParser.isCanProtocol(client.execute(ElmCommand.PROTOCOL_NUMBER)))
             listOf(PollTarget.BOTH) else single
     }
-    private suspend fun poll(session: Elm327Client, preferred: List<PollTarget>, fallback: List<PollTarget>) {
+    private suspend fun poll(session: Elm327Client, preferred: List<PollTarget>, fallback: List<PollTarget>,
+        details: Details) {
         var targets = preferred
         while (true) {
             var misses = 0
@@ -111,7 +129,7 @@ class ObdRepository(
                 }, onSample = { sample ->
                     for ((sensor, result) in sample.results)
                         record(sensor, result, sample.finishedMs, sample.latencyMs, sample.slotMs)
-                }, betweenCycles = { serveDtcRequest(session) })
+                }, betweenCycles = { serveDtcRequest(session); serveDetails(session, details) })
                 return
             } catch (e: CombinedUnsupported) {
                 targets = fallback
@@ -121,8 +139,71 @@ class ObdRepository(
         }
     }
     fun demo() = replace(MonitorState(phase = ConnectionPhase.DEMO, deviceName = "Simulador local",
-        message = "MODO DEMONSTRAÇÃO • dados simulados")) {
-        DemoTelemetrySource(clock).run { sensor, value, now -> record(sensor, PidResult.Value(value), now, 0, 100) }
+        message = "MODO DEMONSTRAÇÃO • dados simulados",
+        vehicle = VehicleInfo("DEMO0000000000000", "Simulado", "Simulador local", 2))) {
+        DemoTelemetrySource(clock).run(onExtras = { values, now -> recordDetails(values, now) }) { sensor, value, now ->
+            record(sensor, PidResult.Value(value), now, 0, 100)
+        }
+    }
+
+    /** Tells the repository which screen is showing; an empty set means speed and RPM only. */
+    fun focus(groups: Set<DataGroup>) { focus = groups }
+
+    /**
+     * One detail transaction per polling cycle, and only for the screen on display.
+     * Like the code read, it runs between cycles, so it shares the single ELM327
+     * transaction lock and its latency never reaches the slot adaptation.
+     */
+    private suspend fun serveDetails(session: Elm327Client, details: Details) {
+        val wanted = focus
+        if (wanted.isEmpty()) return
+        if (details.can == null) {
+            val raw = session.execute(ElmCommand.PROTOCOL_NUMBER)
+            val can = ObdPidParser.isCanProtocol(raw)
+            details.can = can
+            // Several PIDs per request exist only on CAN, and the verified requests rely on it.
+            mutable.update { it.copy(vehicle = it.vehicle.copy(protocol = ExtraPids.protocolName(raw)),
+                extras = it.extras.copy(notice = if (can) null
+                    else "As telas de dados exigem protocolo CAN; este veículo usa outro.")) }
+            return
+        }
+        if (DataGroup.VEHICLE in wanted && !details.identified) {
+            details.identified = true
+            val vin = ExtraPids.vin(session.execute(ElmCommand.VIN))
+            mutable.update { it.copy(vehicle = it.vehicle.copy(vin = vin)) }
+            return
+        }
+        if (details.can != true) return
+        if (!details.masksRead) { readMasks(session, details); return }
+        val commands = ExtraQuery.entries
+            .filter { query -> query.groups.any { it in wanted } && query.pids.any { it in details.pids } }
+            .map { it.command } +
+            if (DataGroup.ELECTRIC in wanted) listOf(ElmCommand.ADAPTER_VOLTAGE) else emptyList()
+        if (commands.isEmpty()) return
+        val command = commands[details.cursor++ % commands.size]
+        val raw = session.execute(command)
+        recordDetails(if (command == ElmCommand.ADAPTER_VOLTAGE)
+            ExtraPids.adapterVoltage(raw)?.let { mapOf(Signal.ADAPTER_VOLTAGE to it) }.orEmpty()
+            else ExtraPids.readings(raw), clock.nowMs())
+    }
+
+    /** 0100 is already known; each further mask is asked only if the previous one announces it. */
+    private suspend fun readMasks(session: Elm327Client, details: Details) {
+        for ((base, command) in listOf(0x20 to ElmCommand.SUPPORTED_21, 0x40 to ElmCommand.SUPPORTED_41,
+            0x60 to ElmCommand.SUPPORTED_61, 0x80 to ElmCommand.SUPPORTED_81)) {
+            if (base !in details.pids) break
+            details.pids += ExtraPids.mask(session.execute(command), base)
+        }
+        details.masksRead = true
+        val missing = ExtraQuery.entries.flatMap { it.pids }.filter { it !in details.pids }
+            .flatMap { ExtraPids.signals(it) }.toSet()
+        mutable.update { it.copy(extras = it.extras.copy(unsupported = missing)) }
+    }
+
+    private fun recordDetails(values: Map<Signal, Double>, now: Long) {
+        if (values.isEmpty()) return
+        mutable.update { state -> state.copy(extras = state.extras.copy(readings = state.extras.readings +
+            values.mapValues { Reading(it.value, now, validForMs = DETAIL_VALID_MS) })) }
     }
 
     /**
@@ -148,15 +229,24 @@ class ObdRepository(
         try {
             val status = DtcParser.status(session.execute(ElmCommand.DTC_STATUS))
             val can = ObdPidParser.isCanProtocol(session.execute(ElmCommand.PROTOCOL_NUMBER))
-            val codes = DtcParser.codes(session.execute(ElmCommand.DTC_STORED), can)
-                .map { DtcCode(it, DtcDescriptions.of(it), DtcDescriptions.origin(it)) }
+            // Confirmed first: a code that is also pending or permanent is listed once, as confirmed.
+            val codes = mutableListOf<DtcCode>()
+            for ((kind, command, reply) in listOf(
+                Triple(DtcKind.STORED, ElmCommand.DTC_STORED, "43"),
+                Triple(DtcKind.PENDING, ElmCommand.DTC_PENDING, "47"),
+                Triple(DtcKind.PERMANENT, ElmCommand.DTC_PERMANENT, "4A"))) {
+                for (code in DtcParser.codes(session.execute(command), can, reply))
+                    if (codes.none { it.code == code })
+                        codes += DtcCode(code, DtcDescriptions.of(code), DtcDescriptions.origin(code), kind)
+            }
             // The count is the sum over the modules that answered 0101; fewer codes than
             // that means something withheld its list, which is worth saying out loud.
+            val stored = codes.count { it.kind == DtcKind.STORED }
             val note = when {
-                status.count > 0 && codes.isEmpty() ->
+                status.count > 0 && stored == 0 ->
                     "A ECU informou ${status.count} código(s), mas não devolveu a lista. O adaptador pode não atender ao modo 03."
-                codes.size < status.count ->
-                    "A ECU contabilizou ${status.count} código(s) e devolveu ${codes.size}."
+                stored < status.count ->
+                    "A ECU contabilizou ${status.count} código(s) e devolveu $stored."
                 else -> null
             }
             mutable.update { it.copy(dtc = DtcReport(DtcPhase.READY, status, codes, note, clock.nowMs())) }
@@ -174,7 +264,8 @@ class ObdRepository(
 
     /** Canned codes so the panel can be seen working without a vehicle. */
     private fun demoReport() = DtcReport(DtcPhase.READY, DtcStatus(milOn = true, count = 3),
-        listOf("P0133", "P0442", "P1631").map { DtcCode(it, DtcDescriptions.of(it), DtcDescriptions.origin(it)) },
+        listOf("P0133" to DtcKind.STORED, "P0442" to DtcKind.PENDING, "P1631" to DtcKind.STORED)
+            .map { (code, kind) -> DtcCode(code, DtcDescriptions.of(code), DtcDescriptions.origin(code), kind) },
         message = "Códigos simulados — nenhuma leitura real foi feita.", readAtMs = clock.nowMs())
     private fun record(sensor: Sensor, result: PidResult, now: Long, latency: Long, slot: Long) {
         mutableTrace.update { (it + QueryTrace(sensor, now, latency, result is PidResult.Value, (result as? PidResult.Missing)?.reason)).takeLast(120) }

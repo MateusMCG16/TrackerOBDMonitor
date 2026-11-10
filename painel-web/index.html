@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Tracker OBD · Painel ao vivo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ícones Octicons (MIT, GitHub), usados pelo Primer -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16Zm3.78-9.72a.751.751 0 0 0-.018-1.042.751.751 0 0 0-1.042-.018L6.75 9.19 5.28 7.72a.751.751 0 0 0-1.042.018.751.751 0 0 0-.018 1.042l2 2a.75.75 0 0 0 1.06 0Z"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 16 16"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></symbol>
+    <symbol id="i-full" viewBox="0 0 16 16"><path d="M1.75 10a.75.75 0 0 1 .75.75v2.5c0 .138.112.25.25.25h2.5a.75.75 0 0 1 0 1.5h-2.5A1.75 1.75 0 0 1 1 13.25v-2.5a.75.75 0 0 1 .75-.75Zm12.5 0a.75.75 0 0 1 .75.75v2.5A1.75 1.75 0 0 1 13.25 15h-2.5a.75.75 0 0 1 0-1.5h2.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 .75-.75ZM2.75 2.5a.25.25 0 0 0-.25.25v2.5a.75.75 0 0 1-1.5 0v-2.5C1 1.784 1.784 1 2.75 1h2.5a.75.75 0 0 1 0 1.5ZM10 1.75a.75.75 0 0 1 .75-.75h2.5c.966 0 1.75.784 1.75 1.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.25.25 0 0 0-.25-.25h-2.5a.75.75 0 0 1-.75-.75Z"/></symbol>
+  </svg>
+
+  <header class="page-header">
+    <div class="page-header-title">
+      <h1>Tracker OBD</h1>
+      <span id="status" class="state-label">Desconectado</span>
+      <span id="hzLabel" class="counter" hidden></span>
+    </div>
+    <div class="page-header-actions">
+      <button id="btnFull" class="btn btn-icon" title="Tela cheia" aria-label="Tela cheia"><svg class="octicon"><use href="#i-full"/></svg></button>
+      <button id="btnDemo" class="btn">Modo demo</button>
+      <button id="btnStop" class="btn btn-danger" hidden>Desconectar</button>
+      <button id="btnConnect" class="btn btn-primary">Conectar ELM327</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="demoBanner" class="banner banner-attention" hidden>
+      <svg class="octicon"><use href="#i-alert"/></svg>
+      <div><b>Modo demonstração.</b> Os valores são simulados; nenhum adaptador está conectado.</div>
+    </div>
+    <div id="aviso" class="banner banner-warning" hidden>
+      <svg class="octicon"><use href="#i-alert"/></svg>
+      <div id="avisoText"></div>
+    </div>
+
+    <section class="top-row">
+      <div class="box gauge-box">
+        <div class="box-header"><h2>Velocidade</h2></div>
+        <svg id="gSpeed" class="gauge" viewBox="0 0 200 172" role="img" aria-label="Velocidade"></svg>
+      </div>
+      <div class="box gauge-box">
+        <div class="box-header"><h2>Rotação</h2></div>
+        <svg id="gRpm" class="gauge" viewBox="0 0 200 172" role="img" aria-label="Rotação"></svg>
+      </div>
+
+      <div class="box diag">
+        <div class="box-header">
+          <h2>Diagnóstico</h2>
+          <span id="milLabel" class="state-label">Luz de injeção: --</span>
+        </div>
+        <div class="box-body diag-body">
+          <div id="dtcArea"></div>
+          <div class="diag-footer">
+            <button id="btnDtc" class="btn btn-block" disabled>Ler códigos de falha</button>
+            <p class="note">Só leitura: esta página não apaga códigos nem escreve nada no carro.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="grupos" class="groups"></div>
+
+    <section class="box">
+      <div class="box-header"><h2>Veículo e sessão</h2></div>
+      <dl class="box-body facts">
+        <div><dt>VIN</dt><dd><span id="iVin">--</span> <button id="btnVin" class="btn-link" hidden>mostrar</button></dd></div>
+        <div><dt>Módulos</dt><dd id="iModules">--</dd></div>
+        <div><dt>Protocolo</dt><dd id="iProto">--</dd></div>
+        <div><dt>Adaptador</dt><dd id="iAdapter">--</dd></div>
+        <div><dt>Modo de leitura</dt><dd id="iMode">--</dd></div>
+        <div><dt>RPM e velocidade</dt><dd id="iHz">--</dd></div>
+        <div><dt>Última latência</dt><dd id="iLat">--</dd></div>
+        <div><dt>Transações / erros</dt><dd id="iCount">--</dd></div>
+      </dl>
+      <details id="logBox" class="box-footer">
+        <summary>Últimas transações com o adaptador</summary>
+        <pre id="log"></pre>
+      </details>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

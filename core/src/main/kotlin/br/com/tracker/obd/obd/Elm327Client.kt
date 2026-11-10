@@ -9,6 +9,9 @@ import kotlinx.coroutines.withTimeout
 class Elm327Client(private val transport: ElmTransport) {
     private val mutex = Mutex()
     private var closed = false
+    /** What the adapter called itself in reply to ATZ, e.g. 'ELM327 v2.1'. */
+    @Volatile var identity: String? = null
+        private set
 
     suspend fun execute(command: ElmCommand): String = mutex.withLock {
         check(!closed) { "Sessão ELM327 encerrada" }
@@ -39,6 +42,8 @@ class Elm327Client(private val transport: ElmTransport) {
             ElmCommand.SPACES_OFF, ElmCommand.HEADERS_OFF, ElmCommand.AUTO_PROTOCOL)) {
             val raw = execute(command)
             val lines = ObdPidParser.lines(raw).filter { it != command.wire }
+            if (command == ElmCommand.RESET) identity = raw.split('\r', '\n').map { it.trim() }
+                .firstOrNull { "ELM" in it.uppercase() && it.uppercase() != command.wire }
             val accepted = if (command == ElmCommand.RESET) lines.any { "ELM" in it || it == "OK" }
                 else lines.any { it == "OK" }
             if (!accepted || ObdPidParser.error(raw) != null) {

@@ -32,6 +32,8 @@ import br.com.tracker.obd.ui.theme.*
 
         DtcStatusRow(report, state.telemetry.nowMs, Modifier.fillMaxWidth())
 
+        DtcHistoryRow(state.extras, state.telemetry.nowMs, state.live, Modifier.fillMaxWidth())
+
         // Top-aligned: a hint centred in the free space reads as a loading state.
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.TopCenter) {
             when {
@@ -42,9 +44,10 @@ import br.com.tracker.obd.ui.theme.*
                 !state.live -> Hint(Warning, "Sem sessão ativa. Vá para Instrumentos, conecte o ELM327 " +
                     "ou abra o modo demo, e volte aqui para consultar.")
                 report.phase == DtcPhase.READY -> Hint(Cyan,
-                    "Nenhum código armazenado nos módulos que responderam.")
+                    "Nenhum código confirmado, pendente ou permanente nos módulos que responderam.")
                 else -> Hint(Muted, "Toque em ler para pedir o estado da luz de injeção (modo 01 PID 01) " +
-                    "e a lista de códigos (modo 03). Nada é escrito na ECU.")
+                    "e as listas de códigos confirmados, pendentes e permanentes (modos 03, 07 e 0A). " +
+                    "Nada é escrito na ECU.")
             }
         }
 

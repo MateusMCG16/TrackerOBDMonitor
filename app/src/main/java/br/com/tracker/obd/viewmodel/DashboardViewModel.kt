@@ -24,6 +24,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun connect(device: PairedDevice) = repository.connect(device.address, device.name)
     fun demo() = repository.demo()
     fun readDtc() = repository.requestDtcRead()
+    /** The screen on display decides which detail values are read. */
+    fun focus(groups: Set<br.com.tracker.obd.data.DataGroup>) = repository.focus(groups)
     fun disconnect() = repository.disconnect()
     fun pause() = repository.disconnect()
     override fun onCleared() { repository.close(); bluetooth.close() }

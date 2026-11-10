@@ -54,7 +54,30 @@ import java.util.Locale
             Text(code.description ?: "Descrição não disponível neste aplicativo",
                 color = if (code.description != null) Color(0xFFE2EEF9) else Muted, fontSize = 13.sp,
                 lineHeight = 18.sp)
-            Text(code.origin, color = Muted, fontSize = 10.sp, letterSpacing = 0.4.sp)
+            Text("${code.origin} • ${code.kind.label}",
+                color = if (code.kind == DtcKind.PENDING) Warning else Muted, fontSize = 10.sp, letterSpacing = 0.4.sp)
+        }
+    }
+}
+
+/**
+ * What the modules counted since the codes were last cleared. Three numbers in one
+ * fixed-height row, so the list of codes below keeps every remaining pixel.
+ */
+@Composable internal fun DtcHistoryRow(extras: ExtraTelemetry, nowMs: Long, live: Boolean, modifier: Modifier = Modifier) {
+    Row(modifier.background(Color(0xFF101826), RoundedCornerShape(16.dp))
+        .border(1.dp, Color(0xFF263449), RoundedCornerShape(16.dp))
+        .padding(horizontal = 14.dp, vertical = 9.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        for ((signal, caption) in listOf(Signal.DISTANCE_SINCE_CLEAR to "KM DESDE A LIMPEZA",
+            Signal.WARMUPS to "AQUECIMENTOS", Signal.DISTANCE_WITH_MIL to "KM COM A LUZ ACESA")) {
+            val reading = extras.reading(signal)
+            val fresh = live && reading.availability(nowMs) == Availability.VALID
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(caption, color = Muted, fontSize = 8.sp, letterSpacing = 0.6.sp, maxLines = 1)
+                Text(reading.value?.let { String.format(Locale.forLanguageTag("pt-BR"), "%,.0f", it) } ?: "--",
+                    color = if (fresh) Color(0xFFEAF4FF) else Muted, fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium, maxLines = 1)
+            }
         }
     }
 }

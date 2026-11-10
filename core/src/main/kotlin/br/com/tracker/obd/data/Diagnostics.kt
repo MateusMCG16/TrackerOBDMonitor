@@ -3,7 +3,13 @@ package br.com.tracker.obd.data
 /** Mode 01 PID 01: the lamp state and how many codes the modules claim to hold. */
 data class DtcStatus(val milOn: Boolean, val count: Int)
 
-data class DtcCode(val code: String, val description: String?, val origin: String)
+/** Which list a code came from: mode 03, 07 or 0A. */
+enum class DtcKind(val label: String) {
+    STORED("confirmado"), PENDING("pendente"), PERMANENT("permanente")
+}
+
+data class DtcCode(val code: String, val description: String?, val origin: String,
+    val kind: DtcKind = DtcKind.STORED)
 
 enum class DtcPhase {
     /** No mode 03 request has been made in this session. */
