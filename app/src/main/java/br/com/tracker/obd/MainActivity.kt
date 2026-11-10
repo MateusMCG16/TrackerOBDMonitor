@@ -24,7 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import br.com.tracker.obd.data.DataGroup
 import br.com.tracker.obd.ui.*
-import br.com.tracker.obd.ui.theme.Graphite
+import br.com.tracker.obd.ui.theme.Primer
 import br.com.tracker.obd.ui.theme.TrackerTheme
 import br.com.tracker.obd.viewmodel.DashboardViewModel
 
@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.rgb(16, 26, 40))
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.rgb(1, 4, 9))
         )
         setContent {
             TrackerTheme {
@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
                     onDispose { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
                 }
                 BackHandler(enabled = tab != Tab.INSTRUMENTS) { tab = Tab.INSTRUMENTS }
-                Scaffold(containerColor = Graphite, bottomBar = {
+                Scaffold(containerColor = Primer.BgDefault, bottomBar = {
                     TrackerNavBar(tab,
                         alert = state.dtc.status?.milOn == true || state.dtc.codes.isNotEmpty(),
                         notice = state.warnings.isNotEmpty()) { tab = it }

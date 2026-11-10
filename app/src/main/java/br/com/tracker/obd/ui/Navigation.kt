@@ -2,6 +2,7 @@ package br.com.tracker.obd.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
@@ -33,7 +34,9 @@ enum class Tab(val label: String) {
 }
 
 @Composable fun TrackerNavBar(current: Tab, alert: Boolean, notice: Boolean, onSelect: (Tab) -> Unit) {
-    NavigationBar(containerColor = Color(0xFF101A28), contentColor = Muted, tonalElevation = 0.dp) {
+    Column {
+    HorizontalDivider(color = Primer.BorderDefault, thickness = 1.dp)
+    NavigationBar(containerColor = Primer.BgInset, contentColor = Primer.FgMuted, tonalElevation = 0.dp) {
         Tab.entries.forEach { tab ->
             val selected = tab == current
             NavigationBarItem(
@@ -41,10 +44,10 @@ enum class Tab(val label: String) {
                 onClick = { onSelect(tab) },
                 icon = {
                     Box {
-                        TabGlyph(tab, if (selected) Cyan else Muted)
+                        TabGlyph(tab, if (selected) Primer.FgDefault else Primer.FgMuted)
                         val dot = when (tab) {
-                            Tab.DIAGNOSTICS -> if (alert) Warning else null
-                            Tab.HELP -> if (notice) Warning else null
+                            Tab.DIAGNOSTICS -> if (alert) Primer.FgDanger else null
+                            Tab.HELP -> if (notice) Primer.FgAttention else null
                             else -> null
                         }
                         if (dot != null) Box(
@@ -53,14 +56,17 @@ enum class Tab(val label: String) {
                         )
                     }
                 },
-                label = { Text(tab.label, fontSize = 11.sp) },
+                label = { Text(tab.label, fontSize = 12.sp,
+                    fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.SemiBold else null) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Cyan, selectedTextColor = Cyan,
-                    unselectedIconColor = Muted, unselectedTextColor = Muted,
-                    indicatorColor = Color(0xFF1B2A3E)
+                    selectedIconColor = Primer.FgDefault, selectedTextColor = Primer.FgDefault,
+                    unselectedIconColor = Primer.FgMuted, unselectedTextColor = Primer.FgMuted,
+                    // Como o UnderlineNav do Primer: o item ativo ganha só um realce neutro.
+                    indicatorColor = Primer.BgNeutralMuted
                 )
             )
         }
+    }
     }
 }
 
@@ -125,29 +131,41 @@ private fun DrawScope.helpGlyph(color: Color) {
         androidx.compose.ui.geometry.Offset(size.width * 0.50f, size.height * 0.72f))
 }
 
-/** Topics inside one destination: equal-width chips, so the row is one line at any width. */
+/**
+ * Topics inside one destination, as the Primer SegmentedControl: one track in
+ * bgColor-muted, the active segment raised in bgColor-default with a border.
+ */
 @Composable fun ChipRow(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(Modifier.fillMaxWidth().background(Primer.BgMuted, Primer.RadiusMedium)
+        .border(1.dp, Primer.BorderDefault, Primer.RadiusMedium).padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         labels.forEachIndexed { index, label ->
             val active = index == selected
             Surface(onClick = { onSelect(index) }, modifier = Modifier.weight(1f),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                color = if (active) Color(0xFF1B2A3E) else Panel,
-                border = androidx.compose.foundation.BorderStroke(1.dp,
-                    if (active) Cyan.copy(alpha = 0.5f) else Color(0xFF263449))) {
-                Text(label, color = if (active) Cyan else Muted, fontSize = 11.sp, maxLines = 1,
+                shape = Primer.RadiusMedium,
+                color = if (active) Primer.ButtonBg else Color.Transparent,
+                border = if (active) androidx.compose.foundation.BorderStroke(1.dp, Primer.BorderDefault) else null) {
+                Text(label, color = if (active) Primer.FgDefault else Primer.FgMuted, fontSize = 12.sp, maxLines = 1,
+                    fontWeight = if (active) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal,
                     softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 9.dp, horizontal = 2.dp))
+                    modifier = Modifier.padding(vertical = 7.dp, horizontal = 2.dp))
             }
         }
     }
 }
 
-/** The one-line header every destination shows, so no screen spends height on a title block. */
-@Composable fun ScreenHeader(eyebrow: String, title: String, subtitle: String, accent: Color = Cyan) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(eyebrow, color = accent, fontSize = 9.sp, letterSpacing = 2.5.sp, maxLines = 1)
-        Text(title, fontSize = 19.sp, style = MaterialTheme.typography.titleLarge)
-        Text(subtitle, color = Muted, fontSize = 11.sp, maxLines = 1)
+/**
+ * The Primer PageHeader every destination shows: a small context line, the title,
+ * and a muted description, kept to three short lines so no screen spends height on it.
+ */
+@Composable fun ScreenHeader(eyebrow: String, title: String, subtitle: String, accent: Color = Primer.FgMuted,
+    trailing: (@Composable () -> Unit)? = null) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.weight(1f)) {
+            Text(eyebrow, color = accent, fontSize = 12.sp, lineHeight = 16.sp, maxLines = 1)
+            Text(title, style = MaterialTheme.typography.titleLarge, color = Primer.FgDefault, maxLines = 1)
+            Text(subtitle, color = Primer.FgMuted, fontSize = 12.sp, lineHeight = 16.sp, maxLines = 1)
+        }
+        trailing?.invoke()
     }
 }

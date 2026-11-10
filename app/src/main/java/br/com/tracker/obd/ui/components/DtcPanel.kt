@@ -30,32 +30,38 @@ import java.util.Locale
  */
 @Composable internal fun DtcStatusRow(report: DtcReport, nowMs: Long, modifier: Modifier = Modifier) {
     val milOn = report.status?.milOn == true
-    Row(modifier.background(Brush.verticalGradient(listOf(Panel, Color(0xFF0F1724))), RoundedCornerShape(22.dp))
-        .border(1.dp, if (milOn) Warning.copy(alpha = 0.45f) else Color(0xFF263449), RoundedCornerShape(22.dp))
-        .padding(horizontal = 16.dp, vertical = 12.dp),
+    Row(modifier.background(if (milOn) Primer.BgDangerMuted else Primer.BgDefault, Primer.RadiusMedium)
+        .border(1.dp, if (milOn) Primer.BorderDangerMuted else Primer.BorderDefault, Primer.RadiusMedium)
+        .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         MilLamp(milOn, 46.dp)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("ESTADO ATUAL", color = Cyan, fontSize = 9.sp, letterSpacing = 2.5.sp, fontWeight = FontWeight.Bold)
-            Text(dtcHeadline(report), color = Color(0xFFEAF4FF), fontSize = 17.sp,
+            Text(dtcHeadline(report), color = Primer.FgDefault, fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold, maxLines = 1)
-            Text(dtcSubtitle(report, nowMs), color = Muted, fontSize = 10.sp, maxLines = 1)
+            Text(dtcSubtitle(report, nowMs), color = Primer.FgMuted, fontSize = 12.sp, maxLines = 1)
         }
+        report.status?.let { StateLabel(if (it.milOn) "Luz acesa" else "Luz apagada", if (it.milOn) Tone.DANGER else Tone.SUCCESS) }
     }
 }
 
 @Composable internal fun DtcCodeRow(code: DtcCode) {
-    Row(Modifier.fillMaxWidth().background(Color(0xFF16202F), RoundedCornerShape(14.dp))
-        .border(1.dp, Color(0xFF26354B), RoundedCornerShape(14.dp)).padding(12.dp),
+    Row(Modifier.fillMaxWidth().background(Primer.BgDefault, Primer.RadiusMedium)
+        .border(1.dp, Primer.BorderDefault, Primer.RadiusMedium).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(code.code, color = Cyan, fontFamily = FontFamily.Monospace, fontSize = 15.sp,
-            fontWeight = FontWeight.Bold, modifier = Modifier.width(62.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(code.code, color = Primer.FgAttention, fontFamily = FontFamily.Monospace, fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold, modifier = Modifier.width(62.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(code.description ?: "Descrição não disponível neste aplicativo",
-                color = if (code.description != null) Color(0xFFE2EEF9) else Muted, fontSize = 13.sp,
+                color = if (code.description != null) Primer.FgDefault else Primer.FgMuted, fontSize = 13.sp,
                 lineHeight = 18.sp)
-            Text("${code.origin} • ${code.kind.label}",
-                color = if (code.kind == DtcKind.PENDING) Warning else Muted, fontSize = 10.sp, letterSpacing = 0.4.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                PrimerLabel(code.kind.label, when (code.kind) {
+                    DtcKind.STORED -> Tone.DANGER
+                    DtcKind.PENDING -> Tone.ATTENTION
+                    DtcKind.PERMANENT -> Tone.NEUTRAL
+                })
+                Text(code.origin, color = Primer.FgMuted, fontSize = 11.sp, maxLines = 1)
+            }
         }
     }
 }
@@ -65,18 +71,20 @@ import java.util.Locale
  * fixed-height row, so the list of codes below keeps every remaining pixel.
  */
 @Composable internal fun DtcHistoryRow(extras: ExtraTelemetry, nowMs: Long, live: Boolean, modifier: Modifier = Modifier) {
-    Row(modifier.background(Color(0xFF101826), RoundedCornerShape(16.dp))
-        .border(1.dp, Color(0xFF263449), RoundedCornerShape(16.dp))
-        .padding(horizontal = 14.dp, vertical = 9.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        for ((signal, caption) in listOf(Signal.DISTANCE_SINCE_CLEAR to "KM DESDE A LIMPEZA",
-            Signal.WARMUPS to "AQUECIMENTOS", Signal.DISTANCE_WITH_MIL to "KM COM A LUZ ACESA")) {
+    Row(modifier.background(Primer.BgMuted, Primer.RadiusMedium)
+        .border(1.dp, Primer.BorderDefault, Primer.RadiusMedium)
+        .padding(horizontal = 14.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        for ((signal, caption) in listOf(Signal.DISTANCE_SINCE_CLEAR to "km desde a limpeza",
+            Signal.WARMUPS to "Aquecimentos", Signal.DISTANCE_WITH_MIL to "km com a luz acesa")) {
             val reading = extras.reading(signal)
             val fresh = live && reading.availability(nowMs) == Availability.VALID
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(caption, color = Muted, fontSize = 8.sp, letterSpacing = 0.6.sp, maxLines = 1)
+                Text(caption, color = Primer.FgMuted, fontSize = 10.sp, maxLines = 1)
                 Text(reading.value?.let { String.format(Locale.forLanguageTag("pt-BR"), "%,.0f", it) } ?: "--",
-                    color = if (fresh) Color(0xFFEAF4FF) else Muted, fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium, maxLines = 1)
+                    color = if (!fresh) Primer.FgMuted
+                        else if (signal == Signal.DISTANCE_WITH_MIL && (reading.value ?: 0.0) > 0) Primer.FgAttention
+                        else Primer.FgDefault, fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold, maxLines = 1)
             }
         }
     }
@@ -107,7 +115,7 @@ internal fun dtcSubtitle(report: DtcReport, nowMs: Long): String {
     val pulse = rememberInfiniteTransition(label = "mil")
     val glow by pulse.animateFloat(0.30f, 0.70f,
         infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "glow")
-    val color = if (on) Warning else Color(0xFF3A4860)
+    val color = if (on) Primer.FgAttention else Primer.FgMuted.copy(alpha = 0.6f)
     Box(Modifier.size(diameter).clearAndSetSemantics {
         contentDescription = if (on) "Luz de injeção acesa" else "Luz de injeção apagada"
     }, contentAlignment = Alignment.Center) {
@@ -115,7 +123,7 @@ internal fun dtcSubtitle(report: DtcReport, nowMs: Long): String {
             val w = size.width
             val h = size.height
             if (on) drawCircle(Brush.radialGradient(
-                listOf(Warning.copy(alpha = glow * 0.5f), Color.Transparent), Offset(w / 2, h / 2), w / 2),
+                listOf(Primer.FgAttention.copy(alpha = glow * 0.5f), Color.Transparent), Offset(w / 2, h / 2), w / 2),
                 w / 2, Offset(w / 2, h / 2))
             // The engine block in profile: a raised cam cover on top, cooling fins on
             // the left flank, the intake stub on the right. No dots inside — two of them

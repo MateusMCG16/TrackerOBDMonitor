@@ -25,35 +25,24 @@ import br.com.tracker.obd.ui.theme.*
     onDemo: () -> Unit, onDisconnect: () -> Unit, modifier: Modifier = Modifier
 ) {
     val t = state.telemetry
-    BoxWithConstraints(modifier.fillMaxSize().background(Graphite)) {
+    BoxWithConstraints(modifier.fillMaxSize().background(Primer.BgDefault)) {
         val wide = maxWidth >= 680.dp
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)) {
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    Text("TRACKER / LIVE INSTRUMENTS", color = Cyan, fontSize = 9.sp, letterSpacing = 2.5.sp)
-                    Text("Tracker OBD Monitor", fontSize = 19.sp,
-                        style = MaterialTheme.typography.titleLarge, maxLines = 1)
-                    Text(if (state.phase == ConnectionPhase.DEMO) "Simulador local • sem veículo"
-                        else "Bluetooth ${linkLabel(link)} • ${state.deviceName ?: "nenhum dispositivo"}",
-                        color = Muted, fontSize = 11.sp, maxLines = 1)
-                }
-                ConnectionStatus(state.phase)
-            }
+            ScreenHeader("Tracker / Instrumentos", "Tracker OBD Monitor",
+                if (state.phase == ConnectionPhase.DEMO) "Simulador local • sem veículo"
+                else "Bluetooth ${linkLabel(link)} • ${state.deviceName ?: "nenhum dispositivo"}",
+                trailing = { ConnectionStatus(state.phase) })
 
-            if (state.phase == ConnectionPhase.DEMO) Text("MODO DEMONSTRAÇÃO • DADOS SIMULADOS",
-                color = Warning, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1,
-                modifier = Modifier.fillMaxWidth()
-                    .background(Warning.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
-                    .padding(horizontal = 12.dp, vertical = 7.dp))
+            if (state.phase == ConnectionPhase.DEMO)
+                Banner("Modo demonstração: os valores são simulados.", Tone.ATTENTION, maxLines = 1)
 
             // In demo the repository's message repeats the banner word for word;
             // showing both cost a line of height and said nothing new.
             if (state.phase != ConnectionPhase.DEMO) state.message?.let {
-                Text(it, color = if (state.phase == ConnectionPhase.ERROR) Alert else Muted,
-                    fontSize = 11.sp, maxLines = 2)
+                if (state.phase == ConnectionPhase.ERROR) Banner(it, Tone.DANGER)
+                else Text(it, color = Primer.FgMuted, fontSize = 12.sp, maxLines = 2)
             }
 
             if (wide) Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -65,11 +54,12 @@ import br.com.tracker.obd.ui.theme.*
             }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (state.active) Button(onClick = onDisconnect, modifier = Modifier.weight(1f)) {
-                    Text(if (state.phase == ConnectionPhase.CONNECTING) "Cancelar conexão" else "Desconectar")
-                } else {
-                    Button(onClick = onConnect, modifier = Modifier.weight(1f)) { Text("Conectar ELM327") }
-                    OutlinedButton(onClick = onDemo, modifier = Modifier.weight(1f)) { Text("Modo demo") }
+                if (state.active) PrimerButton(
+                    if (state.phase == ConnectionPhase.CONNECTING) "Cancelar conexão" else "Desconectar",
+                    onDisconnect, Modifier.weight(1f), ButtonVariant.DANGER)
+                else {
+                    PrimerButton("Modo demo", onDemo, Modifier.weight(1f))
+                    PrimerButton("Conectar ELM327", onConnect, Modifier.weight(1f), ButtonVariant.PRIMARY)
                 }
             }
         }
