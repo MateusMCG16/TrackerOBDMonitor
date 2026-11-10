@@ -117,11 +117,12 @@ import kotlin.math.*
             }
         }
 
-        Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Metric("Atualização", String.format(Locale.US, "%.1f Hz", if (live) data.hz else 0.0))
+        // Three equal thirds, each centred: SpaceBetween spaced them by their text width.
+        Row(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+            Metric("Atualização", String.format(PT_BR, "%.1f Hz", if (live) data.hz else 0.0))
             Metric("Latência", data.latencyMs?.let { "$it ms" } ?: "--")
             Metric("Idade", reading.measuredAtMs?.let {
-                String.format(Locale.US, "%.1f s", (nowMs - it).coerceAtLeast(0) / 1000.0)
+                String.format(PT_BR, "%.1f s", (nowMs - it).coerceAtLeast(0) / 1000.0)
             } ?: "--")
         }
         val footnote = reading.issue ?: if (rpm) "Faixa vermelha ilustrativa • escala × 1.000" else null
@@ -131,8 +132,10 @@ import kotlin.math.*
     }
 }
 
-@Composable private fun Metric(label: String, value: String) {
-    Column {
+private val PT_BR: Locale = Locale.forLanguageTag("pt-BR")
+
+@Composable private fun RowScope.Metric(label: String, value: String) {
+    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, color = Primer.FgMuted, fontSize = 10.sp, maxLines = 1)
         Text(value, color = Primer.FgDefault, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
