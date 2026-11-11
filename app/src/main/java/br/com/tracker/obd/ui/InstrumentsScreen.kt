@@ -21,7 +21,7 @@ import br.com.tracker.obd.ui.theme.*
  * gauges moved to [HelpScreen]; the fault codes moved to [DiagnosticsScreen].
  */
 @Composable fun InstrumentsScreen(
-    state: MonitorState, link: BluetoothLink, onConnect: () -> Unit,
+    state: MonitorState, link: BluetoothLink, redline: RedlineSetting?, onConnect: () -> Unit,
     onDemo: () -> Unit, onDisconnect: () -> Unit, modifier: Modifier = Modifier
 ) {
     val t = state.telemetry
@@ -47,10 +47,10 @@ import br.com.tracker.obd.ui.theme.*
 
             if (wide) Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 SpeedGauge(t.speed, t.nowMs, state.live, Modifier.weight(1f).fillMaxHeight())
-                RpmGauge(t.rpm, t.nowMs, state.live, Modifier.weight(1f).fillMaxHeight())
+                RpmGauge(t.rpm, t.nowMs, state.live, redline, Modifier.weight(1f).fillMaxHeight())
             } else {
                 SpeedGauge(t.speed, t.nowMs, state.live, Modifier.fillMaxWidth().weight(1f))
-                RpmGauge(t.rpm, t.nowMs, state.live, Modifier.fillMaxWidth().weight(1f))
+                RpmGauge(t.rpm, t.nowMs, state.live, redline, Modifier.fillMaxWidth().weight(1f))
             }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {

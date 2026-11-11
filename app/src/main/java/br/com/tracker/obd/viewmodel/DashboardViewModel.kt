@@ -10,7 +10,10 @@ import kotlinx.coroutines.flow.*
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
     private val bluetooth = BluetoothConnectionManager(application)
     private val repository = ObdRepository(viewModelScope, TransportConnector { bluetooth.connect(it) })
+    private val redlineStore = br.com.tracker.obd.settings.RedlineStore(application)
     val state = repository.state
+    val redline = redlineStore.setting
+    fun saveRedline(setting: br.com.tracker.obd.data.RedlineSetting) = redlineStore.save(setting)
     val bluetoothLink = bluetooth.link
     private val mutableDevices = MutableStateFlow<List<PairedDevice>>(emptyList())
     val devices = mutableDevices.asStateFlow()

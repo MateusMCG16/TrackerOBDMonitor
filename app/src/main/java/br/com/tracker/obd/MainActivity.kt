@@ -22,6 +22,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import br.com.tracker.obd.data.ConnectionPhase
 import br.com.tracker.obd.data.DataGroup
 import br.com.tracker.obd.ui.*
 import br.com.tracker.obd.ui.theme.Primer
@@ -47,9 +48,19 @@ class MainActivity : ComponentActivity() {
                 var tab by rememberSaveable { mutableStateOf(Tab.INSTRUMENTS) }
                 var dataTopic by rememberSaveable { mutableStateOf(DataTopic.MOTOR) }
                 var showConnection by rememberSaveable { mutableStateOf(false) }
+                val redline by model.redline.collectAsStateWithLifecycle()
+                // Asked once per launch, as soon as a real session delivers its first RPM
+                // sample: earlier there is nothing to measure, and demo has no engine.
+                var redlineAsked by rememberSaveable { mutableStateOf(false) }
+                var showRedline by rememberSaveable { mutableStateOf(false) }
+                val rpmArrived = state.phase == ConnectionPhase.RECEIVING && state.telemetry.rpm.reading.value != null
+                LaunchedEffect(rpmArrived) {
+                    if (rpmArrived && !redlineAsked) { redlineAsked = true; showRedline = true }
+                }
                 // Only the screen on display is read: Instruments keeps the link for speed and RPM.
-                LaunchedEffect(tab, dataTopic) {
-                    model.focus(when (tab) {
+                // While measuring the redline, nothing else may take the adapter's time.
+                LaunchedEffect(tab, dataTopic, showRedline) {
+                    model.focus(if (showRedline) emptySet() else when (tab) {
                         Tab.INSTRUMENTS -> emptySet()
                         Tab.DATA -> setOf(dataTopic.group)
                         Tab.DIAGNOSTICS -> setOf(DataGroup.HISTORY)
@@ -78,13 +89,18 @@ class MainActivity : ComponentActivity() {
                 }) { inner ->
                     val fill = Modifier.padding(inner)
                     when (tab) {
-                        Tab.INSTRUMENTS -> InstrumentsScreen(state, link,
+                        Tab.INSTRUMENTS -> InstrumentsScreen(state, link, redline,
                             onConnect = { showConnection = true; refresh() },
                             onDemo = model::demo, onDisconnect = model::disconnect, modifier = fill)
                         Tab.DATA -> DataScreen(state, dataTopic, onTopic = { dataTopic = it }, modifier = fill)
                         Tab.DIAGNOSTICS -> DiagnosticsScreen(state, onRead = model::readDtc, modifier = fill)
-                        Tab.HELP -> HelpScreen(state, modifier = fill)
+                        Tab.HELP -> HelpScreen(state, redline, onRedline = { showRedline = true }, modifier = fill)
                     }
+                    if (showRedline) RedlineScreen(state.telemetry.rpm.reading,
+                        live = state.phase == ConnectionPhase.RECEIVING || state.phase == ConnectionPhase.WAITING,
+                        saved = redline,
+                        onSave = { model.saveRedline(it); showRedline = false; tab = Tab.INSTRUMENTS },
+                        onDismiss = { showRedline = false })
                     if (showConnection) ConnectionScreen(devices, error,
                         onSelect = { showConnection = false; model.connect(it) }, onRefresh = refresh,
                         onSettings = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },

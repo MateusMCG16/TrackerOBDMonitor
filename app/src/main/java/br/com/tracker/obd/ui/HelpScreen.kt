@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.tracker.obd.data.MonitorState
+import br.com.tracker.obd.data.RedlineSetting
 import br.com.tracker.obd.ui.components.label
 import br.com.tracker.obd.ui.theme.*
 
@@ -32,7 +33,8 @@ private enum class Topic(val chip: String, val title: String) {
     LIMITS("Limites", "LIMITES CONHECIDOS")
 }
 
-@Composable fun HelpScreen(state: MonitorState, modifier: Modifier = Modifier) {
+@Composable fun HelpScreen(state: MonitorState, redline: RedlineSetting?, onRedline: () -> Unit,
+    modifier: Modifier = Modifier) {
     var topic by rememberSaveable { mutableStateOf(Topic.SESSION) }
     Column(modifier.fillMaxSize().background(Primer.BgDefault).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -65,9 +67,10 @@ private enum class Topic(val chip: String, val title: String) {
                         Metric("Módulos", v.modules?.let { "$it responderam ao OBD" } ?: "--")
                         Metric("Protocolo", v.protocol ?: "--")
                         Metric("Adaptador", v.adapter ?: "--")
+                        Metric("Linha vermelha", redline?.let { "${rpmText(it.rpm)} (${it.source.label})" }
+                            ?: "não definida")
                         Para("O VIN é lido do carro e aparece só aqui; nada é enviado para fora do telefone.", body, line)
-                        Para("As telas de Dados leem apenas os valores em exibição; em Instrumentos o " +
-                            "adaptador fica só com velocidade e RPM.", body, line)
+                        PrimerButton("Alterar linha vermelha", onRedline, Modifier.fillMaxWidth())
                     }
                     Topic.READING -> {
                         Para("A primeira letra diz qual sistema reportou a falha, e o dígito seguinte diz " +

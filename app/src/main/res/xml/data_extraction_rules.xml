@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- O aplicativo não persiste nada: sem banco, preferências ou arquivos de leitura.
-     Nada a restaurar em nuvem nem a transferir entre aparelhos. -->
+<!-- O aplicativo só guarda a linha vermelha escolhida pelo usuário; não há banco nem
+     arquivos de leitura. Nada vai para a nuvem nem é transferido entre aparelhos. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" />

@@ -68,7 +68,16 @@ O botão de configurações Bluetooth permite parear/ativar o rádio. Ao retorna
 - Com os cabeçalhos desligados, dois módulos que respondem ao mesmo pedido são distinguidos pelo conteúdo: a resposta com mais PIDs é a do motor. É assim que a tensão do módulo (PID 42) é separada entre motor e câmbio.
 - Um valor de detalhe fica esmaecido 8 s depois da última leitura válida.
 
-**5 Hz é uma meta, não uma garantia.** A capacidade do clone, do Bluetooth e da ECU determina a taxa real. A escala do velocímetro é de 0 a 220 km/h; valores medidos maiores continuam aparecendo numericamente e o arco satura. A escala de RPM vai de 0 a 8.000. A marca de 6.500 a 8.000 é somente ilustrativa e não representa o limite do motor da Tracker.
+**5 Hz é uma meta, não uma garantia.** A capacidade do clone, do Bluetooth e da ECU determina a taxa real. A escala do velocímetro é de 0 a 220 km/h; valores medidos maiores continuam aparecendo numericamente e o arco satura. A faixa vermelha do conta-giros começa na linha vermelha definida pelo usuário, e a escala vai até essa rotação mais pelo menos 1.000 rpm, em milhares inteiros (8.000 sem linha definida).
+
+### Linha vermelha
+
+O OBD2 não tem PID para o limite de giro, então o aplicativo não o lê do carro. Na primeira leitura de RPM de cada abertura do app aparece a tela **Linha vermelha do motor**, com duas opções:
+
+- **Medir acelerando até o corte:** com o carro parado, freio de mão puxado, câmbio em P ou N e motor quente, o usuário acelera até o corte e solta. Enquanto essa tela está aberta o adaptador fica só com velocidade e RPM. O app guarda a maior rotação lida e indica o corte quando o giro cai 600 rpm abaixo de um pico de pelo menos 3.000 rpm. O valor sugerido é o pico arredondado para baixo até a centena. Em P ou N muitos carros cortam antes da linha vermelha real, e a 5 Hz o pico pode ficar um pouco abaixo do corte. **Na Tracker, parada, o corte fica em cerca de 3.000 rpm**; a faixa vermelha do painel original começa em 6.000 rpm, e esse é o valor a digitar.
+- **Digitar o valor:** entre 3.000 e 10.000 rpm, como no manual ou no painel original.
+
+O valor fica salvo no aparelho (é a única preferência que o app guarda, fora de qualquer backup) e pode ser trocado em **Ajuda → Veículo → Alterar linha vermelha**. Sem linha definida, o conta-giros não mostra faixa vermelha.
 
 ## Protocolo e falhas
 
