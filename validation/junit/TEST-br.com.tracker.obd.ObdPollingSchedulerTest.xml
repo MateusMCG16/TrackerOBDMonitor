@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="br.com.tracker.obd.ObdPollingSchedulerTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-21T21:21:30.239Z" hostname="991463ee9caf" time="4.227">
+<testsuite name="br.com.tracker.obd.ObdPollingSchedulerTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-11T22:12:42.140Z" hostname="MCG-NT5" time="0.101">
   <properties/>
-  <testcase name="twoSensorsEachHaveFiveHzWithNoOverlap" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="4.163"/>
-  <testcase name="noDataBacksOffAndCancellationStopsFurtherRequests" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.012"/>
-  <testcase name="oneSupportedSensorRemainsAtFiveHz" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.011"/>
-  <testcase name="overdueWorkIsNeverReplayed" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.009"/>
-  <testcase name="frequencyRecoversGraduallyAfterSlowResponse" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.013"/>
+  <testcase name="twoSensorsEachHaveFiveHzWithNoOverlap" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.014"/>
+  <testcase name="noDataBacksOffAndCancellationStopsFurtherRequests" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.008"/>
+  <testcase name="combinedTargetGivesBothSensorsFiveHzInOneTransaction" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.012"/>
+  <testcase name="oneSupportedSensorRemainsAtFiveHz" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.022"/>
+  <testcase name="overdueWorkIsNeverReplayed" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.01"/>
+  <testcase name="combinedReplyWithOneValidSensorIsNotTreatedAsFailure" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.01"/>
+  <testcase name="frequencyRecoversGraduallyAfterSlowResponse" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.01"/>
   <testcase name="slowAdapterReducesFrequencyWithoutQueueOrCatchup" classname="br.com.tracker.obd.ObdPollingSchedulerTest" time="0.011"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

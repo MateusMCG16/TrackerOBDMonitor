@@ -177,17 +177,19 @@ document.getElementById(id).style.display = 'none';
 <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
   <header class="mdl-layout__header">
     <div class="mdl-layout__header-row">
-      <span class="mdl-layout-title">Lint Report: 2 warnings</span>
+      <span class="mdl-layout-title">Lint Report: 4 warnings</span>
       <div class="mdl-layout-spacer"></div>
-      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Wed Oct 21 16:26:28 CDT 2026 by AGP (9.2.1)</nav>
+      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Wed Nov 11 19:11:38 BRT 2026 by AGP (9.2.1)</nav>
     </div>
   </header>
   <div class="mdl-layout__drawer">
     <span class="mdl-layout-title">Issue Types</span>
     <nav class="mdl-navigation">
       <a class="mdl-navigation__link" href="#overview"><i class="material-icons">dashboard</i>Overview</a>
+      <a class="mdl-navigation__link" href="#AndroidGradlePluginVersion"><i class="material-icons warning-icon">warning</i>Obsolete Android Gradle Plugin Version (1)</a>
       <a class="mdl-navigation__link" href="#NewerVersionAvailable"><i class="material-icons warning-icon">warning</i>Newer Library Versions Available (1)</a>
-      <a class="mdl-navigation__link" href="#DataExtractionRules"><i class="material-icons warning-icon">warning</i>Missing data extraction rules (1)</a>
+      <a class="mdl-navigation__link" href="#ModifierParameter"><i class="material-icons warning-icon">warning</i>Guidelines for Modifier parameters in a Composable function (1)</a>
+      <a class="mdl-navigation__link" href="#ObsoleteSdkInt"><i class="material-icons warning-icon">warning</i>Obsolete SDK_INT Version Check (1)</a>
     </nav>
   </div>
   <main class="mdl-layout__content">
@@ -204,12 +206,18 @@ document.getElementById(id).style.display = 'none';
 </td></tr>
 <tr>
 <td class="countColumn">1</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
+<a href="#AndroidGradlePluginVersion">AndroidGradlePluginVersion</a>: Obsolete Android Gradle Plugin Version</td></tr>
+<tr>
+<td class="countColumn">1</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
 <a href="#NewerVersionAvailable">NewerVersionAvailable</a>: Newer Library Versions Available</td></tr>
-<tr><td class="countColumn"></td><td class="categoryColumn"><a href="#Security">Security</a>
+<tr>
+<td class="countColumn">1</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
+<a href="#ModifierParameter">ModifierParameter</a>: Guidelines for Modifier parameters in a Composable function</td></tr>
+<tr><td class="countColumn"></td><td class="categoryColumn"><a href="#Performance">Performance</a>
 </td></tr>
 <tr>
 <td class="countColumn">1</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
-<a href="#DataExtractionRules">DataExtractionRules</a>: Missing data extraction rules</td></tr>
+<a href="#ObsoleteSdkInt">ObsoleteSdkInt</a>: Obsolete SDK_INT Version Check</td></tr>
 <tr><td></td><td class="categoryColumn"><a href="#ExtraIssues">Included Additional Checks (66)</a>
 </td></tr>
 <tr><td></td><td class="categoryColumn"><a href="#MissingIssues">Disabled Checks (42)</a>
@@ -222,7 +230,52 @@ Dismiss</button>            </div>
             </div>
           </section>
 <a name="Correctness"></a>
-<a name="NewerVersionAvailable"></a>
+<a name="AndroidGradlePluginVersion"></a>
+<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="AndroidGradlePluginVersionCard" style="display: block;">
+            <div class="mdl-card mdl-cell mdl-cell--12-col">
+  <div class="mdl-card__title">
+    <h2 class="mdl-card__title-text">Obsolete Android Gradle Plugin Version</h2>
+  </div>
+              <div class="mdl-card__supporting-text">
+<div class="issue">
+<div class="warningslist">
+<span class="location"><a href="../../../gradle/wrapper/gradle-wrapper.properties">../../../gradle/wrapper/gradle-wrapper.properties</a>:3</span>: <span class="message">A newer version of Gradle than 9.4.1 is available: 9.9.1</span><br /><pre class="errorlines">
+<span class="lineno"> 1 </span>distributionBase=GRADLE_USER_HOME
+<span class="lineno"> 2 </span>distributionPath=wrapper/dists
+<span class="caretline"><span class="lineno"> 3 </span>distributionUrl=<span class="warning">https\://services.gradle.org/distributions/gradle-9.4.1-bin.zip</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno"> 4 </span>networkTimeout=60000
+<span class="lineno"> 5 </span>validateDistributionUrl=true
+<span class="lineno"> 6 </span>zipStoreBase=GRADLE_USER_HOME
+</pre>
+
+</div>
+<div class="metadata"><div class="explanation" id="explanationAndroidGradlePluginVersion" style="display: none;">
+This detector looks for usage of the Android Gradle Plugin where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find.<br/>Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.<br>
+To suppress this error, use the issue id "AndroidGradlePluginVersion" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
+<br/></div>
+</div>
+</div>
+<div class="chips">
+<span class="mdl-chip">
+    <span class="mdl-chip__text">AndroidGradlePluginVersion</span>
+</span>
+<span class="mdl-chip">
+    <span class="mdl-chip__text">Correctness</span>
+</span>
+<span class="mdl-chip">
+    <span class="mdl-chip__text">Warning</span>
+</span>
+<span class="mdl-chip">
+    <span class="mdl-chip__text">Priority 4/10</span>
+</span>
+</div>
+              </div>
+              <div class="mdl-card__actions mdl-card--border">
+<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationAndroidGradlePluginVersionLink" onclick="reveal('explanationAndroidGradlePluginVersion');">
+Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="AndroidGradlePluginVersionCardLink" onclick="hideid('AndroidGradlePluginVersionCard');">
+Dismiss</button>            </div>
+            </div>
+          </section><a name="NewerVersionAvailable"></a>
 <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="NewerVersionAvailableCard" style="display: block;">
             <div class="mdl-card mdl-cell mdl-cell--12-col">
   <div class="mdl-card__title">
@@ -267,43 +320,46 @@ To suppress this error, use the issue id "NewerVersionAvailable" as explained in
 Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="NewerVersionAvailableCardLink" onclick="hideid('NewerVersionAvailableCard');">
 Dismiss</button>            </div>
             </div>
-          </section>
-<a name="Security"></a>
-<a name="DataExtractionRules"></a>
-<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="DataExtractionRulesCard" style="display: block;">
+          </section><a name="ModifierParameter"></a>
+<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="ModifierParameterCard" style="display: block;">
             <div class="mdl-card mdl-cell mdl-cell--12-col">
   <div class="mdl-card__title">
-    <h2 class="mdl-card__title-text">Missing data extraction rules</h2>
+    <h2 class="mdl-card__title-text">Guidelines for Modifier parameters in a Composable function</h2>
   </div>
               <div class="mdl-card__supporting-text">
 <div class="issue">
 <div class="warningslist">
-<span class="location"><a href="../../src/main/AndroidManifest.xml">../../src/main/AndroidManifest.xml</a>:7</span>: <span class="message">The attribute <code>android:allowBackup</code> is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute <code>android:dataExtractionRules</code> specifying an <code>@xml</code> resource which configures cloud backups and device transfers on Android 12 and higher.</span><br /><pre class="errorlines">
-<span class="lineno">  4 </span>  <span class="tag">&lt;uses-permission</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">name</span>=<span class="value">"android.permission.BLUETOOTH_CONNECT"</span> />
-<span class="lineno">  5 </span>  <span class="tag">&lt;uses-feature</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">name</span>=<span class="value">"android.hardware.bluetooth"</span> <span class="prefix">android:</span><span class="attribute">required</span>=<span class="value">"false"</span> />
-<span class="lineno">  6 </span>  <span class="tag">&lt;application</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">theme</span>=<span class="value">"@style/Theme.Tracker"</span> <span class="prefix">android:</span><span class="attribute">label</span>=<span class="value">"Tracker OBD Monitor"</span>
-<span class="caretline"><span class="lineno">  7 </span>      <span class="prefix">android:</span><span class="attribute">icon</span>=<span class="value">"@drawable/ic_tracker"</span> <span class="prefix">android:</span><span class="attribute">allowBackup</span>=<span class="value">"</span><span class="warning"><span class="value">false</span></span><span class="value">"</span> <span class="prefix">android:</span><span class="attribute">supportsRtl</span>=<span class="value">"true"</span>>&nbsp;</span>
-<span class="lineno">  8 </span>      <span class="tag">&lt;activity</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">name</span>=<span class="value">".MainActivity"</span> <span class="prefix">android:</span><span class="attribute">exported</span>=<span class="value">"true"</span>>
-<span class="lineno">  9 </span>          <span class="tag">&lt;intent-filter>&lt;action</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">name</span>=<span class="value">"android.intent.action.MAIN"</span> /><span class="tag">&lt;category</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">name</span>=<span class="value">"android.intent.category.LAUNCHER"</span> /><span class="tag">&lt;/intent-filter></span>
-<span class="lineno"> 10 </span>      <span class="tag">&lt;/activity></span></pre>
+<span class="location"><a href="../../src/main/java/br/com/tracker/obd/ui/theme/PrimerComponents.kt">../../src/main/java/br/com/tracker/obd/ui/theme/PrimerComponents.kt</a>:60</span>: <span class="message">Modifier parameter should be the first optional parameter</span><br /><pre class="errorlines">
+<span class="lineno">  57 </span>}
+<span class="lineno">  58 </span>
+<span class="lineno">  59 </span><span class="javadoc">/** Label: pílula só com borda, para classificar (tipo de código, etc.). */</span>
+<span class="caretline"><span class="lineno">  60 </span><span class="annotation">@Composable</span> <span class="keyword">fun</span> PrimerLabel(text: String, tone: Tone = Tone.NEUTRAL, <span class="warning">modifier</span>: Modifier = Modifier) {</span>
+<span class="lineno">  61 </span>    Text(text, color = tone.fg, fontSize = <span class="number">11.</span>sp, fontWeight = FontWeight.Medium, maxLines = <span class="number">1</span>,
+<span class="lineno">  62 </span>        modifier = modifier.border(<span class="number">1.d</span>p, tone.border, Primer.RadiusFull).padding(horizontal = <span class="number">7.d</span>p, vertical = <span class="number">1.d</span>p))
+<span class="lineno">  63 </span>}
+</pre>
 
 </div>
-<div class="metadata"><div class="explanation" id="explanationDataExtractionRules" style="display: none;">
-Before Android 12, the attributes <code>android:allowBackup</code> and <code>android:fullBackupContent</code> were used to configure all forms of backup, including cloud backups, device-to-device transfers and adb backup.<br/>
-<br/>
-In Android 12 and higher, these attributes have been deprecated and will only apply to cloud backups. You should instead use the attribute <code>android:dataExtractionRules</code>, specifying an <code>@xml</code> resource that configures which files to back up, for cloud backups and for device-to-device transfers, separately. If your <code>minSdkVersion</code> supports older versions, you'll still want to specify an <code>android:fullBackupContent</code> resource if the default behavior is not right for your app.<br/><div class="moreinfo">More info: <ul><li><a href="https://developer.android.com/about/versions/12/backup-restore#xml-changes">https://developer.android.com/about/versions/12/backup-restore#xml-changes</a>
-<li><a href="https://goo.gle/DataExtractionRules">https://goo.gle/DataExtractionRules</a>
-</ul></div>Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.<br>
-To suppress this error, use the issue id "DataExtractionRules" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
+<div class="metadata"><div class="explanation" id="explanationModifierParameter" style="display: none;">
+The first (or only) Modifier parameter in a Composable function should follow the following rules:<br/>
+- Be named <code>modifier</code><br/>
+- Have a type of <code>Modifier</code><br/>
+- Either have no default value, or have a default value of <code>Modifier</code><br/>
+- If optional, be the first optional parameter in the parameter list<br/>To suppress this error, use the issue id "ModifierParameter" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
 <br/></div>
 </div>
 </div>
+<div class="vendor">
+Vendor: Jetpack Compose<br/>
+Identifier: androidx.compose.ui<br/>
+Feedback: <a href="https://issuetracker.google.com/issues/new?component=612128">https://issuetracker.google.com/issues/new?component=612128</a><br/>
+</div>
 <div class="chips">
 <span class="mdl-chip">
-    <span class="mdl-chip__text">DataExtractionRules</span>
+    <span class="mdl-chip__text">ModifierParameter</span>
 </span>
 <span class="mdl-chip">
-    <span class="mdl-chip__text">Security</span>
+    <span class="mdl-chip__text">Correctness</span>
 </span>
 <span class="mdl-chip">
     <span class="mdl-chip__text">Warning</span>
@@ -314,8 +370,49 @@ To suppress this error, use the issue id "DataExtractionRules" as explained in t
 </div>
               </div>
               <div class="mdl-card__actions mdl-card--border">
-<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationDataExtractionRulesLink" onclick="reveal('explanationDataExtractionRules');">
-Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="DataExtractionRulesCardLink" onclick="hideid('DataExtractionRulesCard');">
+<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationModifierParameterLink" onclick="reveal('explanationModifierParameter');">
+Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="ModifierParameterCardLink" onclick="hideid('ModifierParameterCard');">
+Dismiss</button>            </div>
+            </div>
+          </section>
+<a name="Performance"></a>
+<a name="ObsoleteSdkInt"></a>
+<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="ObsoleteSdkIntCard" style="display: block;">
+            <div class="mdl-card mdl-cell mdl-cell--12-col">
+  <div class="mdl-card__title">
+    <h2 class="mdl-card__title-text">Obsolete SDK_INT Version Check</h2>
+  </div>
+              <div class="mdl-card__supporting-text">
+<div class="issue">
+<div class="warningslist">
+<span class="location"><a href="../../src/main/res/mipmap-anydpi-v26">../../src/main/res/mipmap-anydpi-v26</a></span>: <span class="message">This folder configuration (<code>v26</code>) is unnecessary; <code>minSdkVersion</code> is 26. Merge all the resources in this folder into <code>mipmap-anydpi</code>.</span><br />
+</div>
+<div class="metadata"><div class="explanation" id="explanationObsoleteSdkInt" style="display: none;">
+This check flags version checks that are not necessary, because the <code>minSdkVersion</code> (or surrounding known API level) is already at least as high as the version checked for.<br/>
+<br/>
+Similarly, it also looks for resources in <code>-vNN</code> folders, such as <code>values-v14</code> where the version qualifier is less than or equal to the <code>minSdkVersion</code>, where the contents should be merged into the best folder.<br/>Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.<br>
+To suppress this error, use the issue id "ObsoleteSdkInt" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
+<br/></div>
+</div>
+</div>
+<div class="chips">
+<span class="mdl-chip">
+    <span class="mdl-chip__text">ObsoleteSdkInt</span>
+</span>
+<span class="mdl-chip">
+    <span class="mdl-chip__text">Performance</span>
+</span>
+<span class="mdl-chip">
+    <span class="mdl-chip__text">Warning</span>
+</span>
+<span class="mdl-chip">
+    <span class="mdl-chip__text">Priority 6/10</span>
+</span>
+</div>
+              </div>
+              <div class="mdl-card__actions mdl-card--border">
+<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationObsoleteSdkIntLink" onclick="reveal('explanationObsoleteSdkInt');">
+Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="ObsoleteSdkIntCardLink" onclick="hideid('ObsoleteSdkIntCard');">
 Dismiss</button>            </div>
             </div>
           </section>

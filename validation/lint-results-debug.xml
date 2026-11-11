@@ -2,6 +2,22 @@
 <issues format="6" by="lint 9.2.1">
 
     <issue
+        id="AndroidGradlePluginVersion"
+        severity="Warning"
+        message="A newer version of Gradle than 9.4.1 is available: 9.9.1"
+        category="Correctness"
+        priority="4"
+        summary="Obsolete Android Gradle Plugin Version"
+        explanation="This detector looks for usage of the Android Gradle Plugin where the version you are using is not the current stable release. Using older versions is fine, and there are cases where you deliberately want to stick with an older version. However, you may simply not be aware that a more recent version is available, and that is what this lint check helps find."
+        errorLine1="distributionUrl=https\://services.gradle.org/distributions/gradle-9.4.1-bin.zip"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="TrackerOBDMonitor\gradle\wrapper\gradle-wrapper.properties"
+            line="3"
+            column="17"/>
+    </issue>
+
+    <issue
         id="NewerVersionAvailable"
         severity="Warning"
         message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-android than 1.10.2 is available: 1.11.0"
@@ -12,27 +28,37 @@
         errorLine1="    implementation(&quot;org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2&quot;)"
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="/workspace/scratch/c2f0489061a2/TrackerOBDMonitor/app/build.gradle.kts"
+            file="TrackerOBDMonitor\app\build.gradle.kts"
             line="26"
             column="20"/>
     </issue>
 
     <issue
-        id="DataExtractionRules"
+        id="ModifierParameter"
         severity="Warning"
-        message="The attribute `android:allowBackup` is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute `android:dataExtractionRules` specifying an `@xml` resource which configures cloud backups and device transfers on Android 12 and higher."
-        category="Security"
+        message="Modifier parameter should be the first optional parameter"
+        category="Correctness"
         priority="3"
-        summary="Missing data extraction rules"
-        explanation="Before Android 12, the attributes `android:allowBackup` and `android:fullBackupContent` were used to configure all forms of backup, including cloud backups, device-to-device transfers and adb backup.&#xA;&#xA;In Android 12 and higher, these attributes have been deprecated and will only apply to cloud backups. You should instead use the attribute `android:dataExtractionRules`, specifying an `@xml` resource that configures which files to back up, for cloud backups and for device-to-device transfers, separately. If your `minSdkVersion` supports older versions, you&apos;ll still want to specify an `android:fullBackupContent` resource if the default behavior is not right for your app."
-        url="https://developer.android.com/about/versions/12/backup-restore#xml-changes"
-        urls="https://developer.android.com/about/versions/12/backup-restore#xml-changes,https://goo.gle/DataExtractionRules"
-        errorLine1="        android:icon=&quot;@drawable/ic_tracker&quot; android:allowBackup=&quot;false&quot; android:supportsRtl=&quot;true&quot;>"
-        errorLine2="                                                                 ~~~~~">
+        summary="Guidelines for Modifier parameters in a Composable function"
+        explanation="The first (or only) Modifier parameter in a Composable function should follow the following rules:&#xA;- Be named `modifier`&#xA;- Have a type of `Modifier`&#xA;- Either have no default value, or have a default value of `Modifier`&#xA;- If optional, be the first optional parameter in the parameter list"
+        errorLine1="@Composable fun PrimerLabel(text: String, tone: Tone = Tone.NEUTRAL, modifier: Modifier = Modifier) {"
+        errorLine2="                                                                     ~~~~~~~~">
         <location
-            file="/workspace/scratch/c2f0489061a2/TrackerOBDMonitor/app/src/main/AndroidManifest.xml"
-            line="7"
-            column="66"/>
+            file="TrackerOBDMonitor\app\src\main\java\br\com\tracker\obd\ui\theme\PrimerComponents.kt"
+            line="60"
+            column="70"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        severity="Warning"
+        message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 26. Merge all the resources in this folder into `mipmap-anydpi`."
+        category="Performance"
+        priority="6"
+        summary="Obsolete SDK_INT Version Check"
+        explanation="This check flags version checks that are not necessary, because the `minSdkVersion` (or surrounding known API level) is already at least as high as the version checked for.&#xA;&#xA;Similarly, it also looks for resources in `-vNN` folders, such as `values-v14` where the version qualifier is less than or equal to the `minSdkVersion`, where the contents should be merged into the best folder.">
+        <location
+            file="TrackerOBDMonitor\app\src\main\res\mipmap-anydpi-v26"/>
     </issue>
 
 </issues>

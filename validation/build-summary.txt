@@ -13,15 +13,18 @@
 > Task :core:compileTestJava NO-SOURCE
 > Task :core:processTestResources NO-SOURCE
 > Task :core:testClasses UP-TO-DATE
-> Task :core:test UP-TO-DATE
 > Task :app:processDebugNavigationResources UP-TO-DATE
 > Task :app:parseDebugLocalResources UP-TO-DATE
 > Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
 > Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
 > Task :app:mergeDebugAssets UP-TO-DATE
 > Task :app:compressDebugAssets UP-TO-DATE
 > Task :app:generateDebugGlobalSynthetics UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeDebugJavaResource UP-TO-DATE
 > Task :app:checkDebugDuplicateClasses UP-TO-DATE
 > Task :app:desugarDebugFileDependencies UP-TO-DATE
 > Task :app:mergeExtDexDebug UP-TO-DATE
@@ -29,7 +32,6 @@
 > Task :app:checkDebugAarMetadata UP-TO-DATE
 > Task :app:mapDebugSourceSetPaths UP-TO-DATE
 > Task :app:compileDebugNavigationResources UP-TO-DATE
-> Task :app:compileDebugKotlin
 > Task :app:mergeDebugResources UP-TO-DATE
 > Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
 > Task :app:extractDeepLinksDebug UP-TO-DATE
@@ -37,32 +39,184 @@
 > Task :app:processDebugManifest UP-TO-DATE
 > Task :app:processDebugManifestForPackage UP-TO-DATE
 > Task :app:processDebugResources UP-TO-DATE
+> Task :app:dexBuilderDebug UP-TO-DATE
+> Task :app:mergeProjectDexDebug UP-TO-DATE
 > Task :app:mergeDebugJniLibFolders UP-TO-DATE
 > Task :app:mergeDebugNativeLibs UP-TO-DATE
 > Task :app:stripDebugDebugSymbols UP-TO-DATE
 > Task :app:validateSigningDebug UP-TO-DATE
 > Task :app:writeDebugAppMetadata UP-TO-DATE
 > Task :app:writeDebugSigningConfigVersions UP-TO-DATE
-> Task :app:preDebugAndroidTestBuild SKIPPED
-> Task :app:extractProguardFiles UP-TO-DATE
-> Task :app:preDebugUnitTestBuild UP-TO-DATE
-> Task :app:compileDebugKotlin
-> Task :app:compileDebugJavaWithJavac NO-SOURCE
-> Task :app:processDebugJavaRes UP-TO-DATE
-> Task :app:mergeDebugJavaResource UP-TO-DATE
-> Task :app:dexBuilderDebug
-> Task :app:bundleDebugClassesToCompileJar
-> Task :app:mergeProjectDexDebug
-> Task :app:generateDebugAndroidTestLintModel
-> Task :app:generateDebugLintReportModel
-> Task :app:generateDebugUnitTestLintModel
-> Task :app:packageDebug
+> Task :app:packageDebug UP-TO-DATE
 > Task :app:createDebugApkListingFileRedirect UP-TO-DATE
-> Task :app:assembleDebug
-> Task :app:lintAnalyzeDebug
-> Task :app:lintAnalyzeDebugAndroidTest
-> Task :app:lintAnalyzeDebugUnitTest
-> Task :app:lintReportDebug
+> Task :app:assembleDebug UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:generateDebugAndroidTestLintModel UP-TO-DATE
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:generateDebugLintReportModel UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:generateDebugUnitTestLintModel UP-TO-DATE
+> Task :app:lintAnalyzeDebug UP-TO-DATE
+> Task :app:lintAnalyzeDebugAndroidTest UP-TO-DATE
+> Task :app:lintAnalyzeDebugUnitTest UP-TO-DATE
+> Task :app:lintReportDebug UP-TO-DATE
 > Task :app:lintDebug
-BUILD SUCCESSFUL in 2m 13s
-50 actionable tasks: 13 executed, 37 up-to-date
+
+> Task :core:test
+
+DtcParserTest > canReplyStartsWithTheNumberOfCodes PASSED
+
+DtcParserTest > statusWithoutLampAndWithNoCodes PASSED
+
+DtcParserTest > everyLetterAndManufacturerRange PASSED
+
+DtcParserTest > paddingAndGarbageAreNotCodes PASSED
+
+DtcParserTest > statusAddsUpModulesAndKeepsAnyLitLamp PASSED
+
+DtcParserTest > legacyReplyHasNoCountByteAndIsPadded PASSED
+
+DtcParserTest > canCountNeverReadsPastTheFrame PASSED
+
+DtcParserTest > severalModulesEachAnswerOnItsOwnLine PASSED
+
+DtcParserTest > statusRefusesErrorsAndShortFrames PASSED
+
+DtcParserTest > canCountShorterThanTheFrameWins PASSED
+
+DtcParserTest > descriptionsCoverGenericCodesAndOwnUpToGaps PASSED
+
+DtcParserTest > statusSplitsMilBitFromCount PASSED
+
+DtcParserTest > noDataMeansNoStoredCodes PASSED
+
+DtcParserTest > theSameCodeFromTwoModulesIsListedOnce PASSED
+
+DtcParserTest > multiFrameReplyIsReassembled PASSED
+
+Elm327ClientTest > cancellationClosesPendingTransport PASSED
+
+Elm327ClientTest > timeoutDuringWriteAlsoClosesTransport PASSED
+
+Elm327ClientTest > timeoutClosesAndPreventsNextCommand PASSED
+
+Elm327ClientTest > criticalUnsupportedCommandStopsInitialization PASSED
+
+Elm327ClientTest > disconnectPropagatesAndCloses PASSED
+
+Elm327ClientTest > noCommandWritesToTheEcu PASSED
+
+Elm327ClientTest > oversizedResponseClosesInsteadOfGrowingWithoutBound PASSED
+
+Elm327ClientTest > commandAllowlistContainsOnlyPermittedOperations PASSED
+
+Elm327ClientTest > initializationOrderAndOptionalCloneCommands PASSED
+
+Elm327ClientTest > concurrentCallersAreSerializedUntilPrompt PASSED
+
+ObdCombinedSessionTest > aNonCanProtocolKeepsOnePidPerRequest PASSED
+
+ObdCombinedSessionTest > aCloneThatIgnoresTheCombinedRequestFallsBackWithoutReconnecting PASSED
+
+ObdCombinedSessionTest > onCanBothSensorsComeFromOneRequestAtFiveHz PASSED
+
+ObdDetailsTest > theModuleThatAnswersMoreIsTheEngine PASSED
+
+ObdDetailsTest > threePidsInOneFrame PASSED
+
+ObdDetailsTest > supportMaskAddsUpTheModules PASSED
+
+ObdDetailsTest > theOpenScreenDecidesWhatIsRead PASSED
+
+ObdDetailsTest > aLongReplyIsReassembled PASSED
+
+ObdDetailsTest > everyRequestStaysInsideWhatTheCloneSurvives PASSED
+
+ObdDetailsTest > framePaddingIsNotAPid PASSED
+
+ObdDetailsTest > aNonCanProtocolLeavesTheDetailScreensEmptyAndSaysWhy PASSED
+
+ObdDetailsTest > withNoDetailScreenOpenOnlySpeedAndRpmAreAsked PASSED
+
+ObdDetailsTest > unsupportedSignalsAreNamedAndNeverRequested PASSED
+
+ObdDetailsTest > scalesMatchTheStandard PASSED
+
+ObdDetailsTest > adapterVoltageAndProtocolName PASSED
+
+ObdDetailsTest > errorsAndGarbageYieldNothing PASSED
+
+ObdDetailsTest > vinNeedsAllSeventeenCharacters PASSED
+
+ObdDetailsTest > theThreeCodeListsAreReadAndLabelled PASSED
+
+ObdDetailsTest > demoFillsEveryDetailValue PASSED
+
+ObdMultiPidTest > canProtocolIsRecognisedIncludingTheAutomaticPrefix PASSED
+
+ObdMultiPidTest > oneCanFrameCarriesRpmAndSpeed PASSED
+
+ObdMultiPidTest > strayNullBytesNeverDiscardAValidReading PASSED
+
+ObdMultiPidTest > orderOfPidsInTheReplyDoesNotMatter PASSED
+
+ObdMultiPidTest > aPartialReplyLeavesTheOtherSensorMissing PASSED
+
+ObdMultiPidTest > multilineReplyIsReassembled PASSED
+
+ObdMultiPidTest > elmErrorsMarkEverySensorRequested PASSED
+
+ObdMultiPidTest > trailingPaddingIsIgnored PASSED
+
+ObdPidParserTest > stableFirstEcuSelection PASSED
+
+ObdPidParserTest > rejectsWrongPidTruncatedGarbageAndEcho PASSED
+
+ObdPidParserTest > noDataAndElmErrorsAreMissing PASSED
+
+ObdPidParserTest > missingSupportNeverAssumesSupport PASSED
+
+ObdPidParserTest > supportMaskAndMultipleEcus PASSED
+
+ObdPidParserTest > parsesSpeedAndZero PASSED
+
+ObdPidParserTest > parsesSpacedAndCompactRpm PASSED
+
+ObdPollingSchedulerTest > twoSensorsEachHaveFiveHzWithNoOverlap PASSED
+
+ObdPollingSchedulerTest > noDataBacksOffAndCancellationStopsFurtherRequests PASSED
+
+ObdPollingSchedulerTest > combinedTargetGivesBothSensorsFiveHzInOneTransaction PASSED
+
+ObdPollingSchedulerTest > oneSupportedSensorRemainsAtFiveHz PASSED
+
+ObdPollingSchedulerTest > overdueWorkIsNeverReplayed PASSED
+
+ObdPollingSchedulerTest > combinedReplyWithOneValidSensorIsNotTreatedAsFailure PASSED
+
+ObdPollingSchedulerTest > frequencyRecoversGraduallyAfterSlowResponse PASSED
+
+ObdPollingSchedulerTest > slowAdapterReducesFrequencyWithoutQueueOrCatchup PASSED
+
+TelemetryTest > demoGeneratesFiveSamplesEachPerSecondAndReaches100 PASSED
+
+TelemetryTest > measuredHzDecaysAndStopsWhenResponsesStop PASSED
+
+TelemetryTest > zeroValidMissingAndStaleAreDistinct PASSED
+
+TelemetryTest > repositoryChecksSupportAndOnlyPollsSupportedPid PASSED
+
+TelemetryTest > reconnectIsBoundedAndCancelable PASSED
+
+TelemetryTest > repeatedMissingReadingsRetainLastMeasurementAndBecomeStale PASSED
+
+TelemetryTest > demoNeverTouchesBluetoothAndSwitchingCancelsIt PASSED
+
+TelemetryTest > backingOffNeverMakesAnOldMeasurementFreshAgain PASSED
+
+TelemetryTest > freshnessThresholdAccountsForAdaptiveInterval PASSED
+
+BUILD SUCCESSFUL in 5s
+50 actionable tasks: 2 executed, 48 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.4.1/userguide/configuration_cache_enabling.html

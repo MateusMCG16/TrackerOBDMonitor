@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="br.com.tracker.obd.ObdMultiPidTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-11T22:12:42.127Z" hostname="MCG-NT5" time="0.004">
+  <properties/>
+  <testcase name="canProtocolIsRecognisedIncludingTheAutomaticPrefix" classname="br.com.tracker.obd.ObdMultiPidTest" time="0.0"/>
+  <testcase name="oneCanFrameCarriesRpmAndSpeed" classname="br.com.tracker.obd.ObdMultiPidTest" time="0.0"/>
+  <testcase name="strayNullBytesNeverDiscardAValidReading" classname="br.com.tracker.obd.ObdMultiPidTest" time="0.001"/>
+  <testcase name="orderOfPidsInTheReplyDoesNotMatter" classname="br.com.tracker.obd.ObdMultiPidTest" time="0.0"/>
+  <testcase name="aPartialReplyLeavesTheOtherSensorMissing" classname="br.com.tracker.obd.ObdMultiPidTest" time="0.002"/>
+  <testcase name="multilineReplyIsReassembled" classname="br.com.tracker.obd.ObdMultiPidTest" time="0.0"/>
+  <testcase name="elmErrorsMarkEverySensorRequested" classname="br.com.tracker.obd.ObdMultiPidTest" time="0.001"/>
+  <testcase name="trailingPaddingIsIgnored" classname="br.com.tracker.obd.ObdMultiPidTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

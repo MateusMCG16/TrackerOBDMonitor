@@ -1,10 +1,12 @@
-# Tracker OBD Monitor
+# TOBD Monitor
 
-Aplicativo Android nativo em Kotlin / Jetpack Compose para velocidade, RPM, dados do motor e códigos de falha via ELM327 Bluetooth Classic SPP. Android 8.0+ (API 26). Sem root, internet, BLE ou integração com a central multimídia. Interface em português com painel grafite, azul e ciano, instrumentos animados e layouts para retrato e paisagem.
+Tracker OBD Monitor: aplicativo Android nativo em Kotlin / Jetpack Compose para velocidade, RPM, dados do motor e códigos de falha via ELM327 Bluetooth Classic SPP. Android 8.0+ (API 26). Sem root, internet, BLE ou integração com a central multimídia. Interface em português no tema escuro do Primer (o sistema de design do GitHub), com instrumentos animados e layouts para retrato e paisagem.
+
+O repositório traz também um [painel web](#painel-web) que lê o mesmo adaptador pelo computador.
 
 ## Abrir e compilar
 
-1. Extraia o ZIP e abra a pasta `TrackerOBDMonitor` no Android Studio compatível com AGP 9.2.
+1. Clone o repositório e abra a pasta `TrackerOBDMonitor` no Android Studio compatível com AGP 9.2.
 2. Selecione **JDK 17** como Gradle JDK. Instale **Android SDK Platform 37.0** e **Build Tools 36.0.0** pelo SDK Manager.
 3. Aguarde o Gradle Sync. A primeira compilação precisa de internet para baixar dependências; **o aplicativo instalado funciona totalmente offline**.
 4. Execute a configuração `app` em um telefone Android com Bluetooth Classic. Emuladores normalmente não disponibilizam uma conexão RFCOMM a um ELM327 físico.
@@ -28,7 +30,7 @@ O APK gerado fica em `app/build/outputs/apk/debug/app-debug.apk`. Para instalar 
 adb install -r app\build\outputs\apk\debug\app-debug.apk
 ```
 
-O pacote também inclui o APK já compilado em `apk/TrackerOBDMonitor-debug.apk` e os relatórios de validação.
+O APK não é versionado (`*.apk` está no `.gitignore`). A cópia local fica em `apk/TrackerOBDMonitor-debug.apk`, e `apk/SHA256SUMS.txt` guarda o SHA-256 dela para conferir o arquivo. Os relatórios de validação estão em `validation/`.
 
 As versões estão fixadas em Gradle Kotlin DSL. O projeto usa AGP com suporte Kotlin integrado; **não adicione `org.jetbrains.kotlin.android` ao módulo app**. O módulo JVM `core` usa o plugin Kotlin JVM e permite testar protocolo e agendamento sem um telefone.
 
@@ -114,6 +116,20 @@ Ajuda          sessão, veículo, como ler o código, o que o diagnóstico faz, 
 - A aba escolhida é `rememberSaveable`: sobrevive à rotação, como a sessão no ViewModel. O botão voltar do sistema retorna a Instrumentos.
 - **Uma única região rola**: a lista de códigos de falha, cujo tamanho o aplicativo não controla. Com muitos códigos armazenados, a lista rola dentro do seu quadro; a tela em si não.
 
+## Painel web
+
+`painel-web/` é uma página estática (HTML, CSS e JavaScript, sem dependências) que lê o ELM327 pela Web Serial API. Serve para consultar o carro pelo notebook, com o adaptador pareado como porta serial (por exemplo, `COM7` no Windows).
+
+```powershell
+python -m http.server 8137 --bind 127.0.0.1 --directory painel-web
+```
+
+Abra `http://127.0.0.1:8137` no **Chrome ou Edge**, clique em **Conectar ELM327** e escolha a porta do adaptador. Outros navegadores, e o navegador embutido de alguns aplicativos, não oferecem a Web Serial nem o seletor de porta. O **Modo demo** funciona sem adaptador.
+
+- Mesma política do aplicativo: uma lista de permissão confere cada comando antes de enviá-lo. Só passam `ATZ`, `ATE0`, `ATL0`, `ATS0`, `ATH1`, `ATSP0`, `ATDPN`, `ATRV`, modo 01 com até três PIDs por pedido, `03`, `07`, `0A`, `0902` e `090A`. Não há modo 04, escrita, atuador nem `ATSH`.
+- Diferente do aplicativo, o painel liga os cabeçalhos (`ATH1`) e identifica qual módulo respondeu.
+- Velocidade e RPM são lidos a cada ciclo; os demais PIDs, em rodízio mais lento.
+
 ## Arquitetura
 
 ```text
@@ -128,6 +144,7 @@ core/src/main/kotlin/br/com/tracker/obd/
   demo/                           fonte simulada independente
 core/src/test/kotlin/br/com/tracker/obd/
                                   testes determinísticos com tempo virtual
+painel-web/                       página estática com Web Serial, sem build
 ```
 
 `core` não depende de Android. Isso mantém os testes do protocolo e do relógio independentes das APIs Bluetooth. `app` fornece o transporte nativo e observa o estado com `collectAsStateWithLifecycle`. Leitura bloqueante RFCOMM fica em `Dispatchers.IO`, alimenta um canal limitado e é interrompida ao fechar o socket; conexão e escrita também são canceláveis sem bloquear a thread principal.
@@ -143,6 +160,6 @@ A lista fechada `ElmCommand` contém somente leituras:
 
 Um teste falha se a lista ganhar um comando fora desses modos. Não há modo 04, ECU write, limpeza de falhas, atuadores, troca de sessão, `ATSH`, fuzzing, CAN bruto, terminal ou comando personalizado. O VIN aparece só na tela de Ajuda e não é gravado nem enviado. Não existe permissão `INTERNET` no manifesto.
 
-Não interaja com o aplicativo durante a condução. Compatibilidade com a Tracker 2022 e o clone ELM327 específico precisa ser confirmada no veículo: os testes automatizados usam transportes simulados e não substituem essa verificação. O app mostra somente as medições recebidas, sem afirmar frequência garantida, precisão de instrumentos originais ou limite real do motor.
+Não interaja com o aplicativo durante a condução. Com a Tracker (ano-modelo 2023) e o clone ELM327 v2.1, o aplicativo já leu velocidade e RPM, e os pedidos das telas de detalhe e de diagnóstico foram conferidos no veículo por um script no notebook. As telas de Dados e Diagnóstico ainda não foram testadas no carro pelo aplicativo: os testes automatizados usam transportes simulados e não substituem essa verificação. O app mostra somente as medições recebidas, sem afirmar frequência garantida, precisão de instrumentos originais ou limite real do motor.
 
-Os comandos executados e o resultado real da compilação e testes da entrega de 21/10/2026 estão em `VALIDATION.md`; as telas de detalhe são posteriores a esse registro.
+Os comandos executados, o resultado real da compilação e dos testes (76 aprovados em 11/11/2026), o que já foi conferido no veículo e o que ainda falta validar estão em `VALIDATION.md`.
