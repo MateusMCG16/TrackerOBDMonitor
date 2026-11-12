@@ -172,3 +172,37 @@ Um teste falha se a lista ganhar um comando fora desses modos. Não há modo 04,
 Não interaja com o aplicativo durante a condução. Com a Tracker (ano-modelo 2023) e o clone ELM327 v2.1, o aplicativo já leu velocidade e RPM, e os pedidos das telas de detalhe e de diagnóstico foram conferidos no veículo por um script no notebook. As telas de Dados e Diagnóstico ainda não foram testadas no carro pelo aplicativo: os testes automatizados usam transportes simulados e não substituem essa verificação. O app mostra somente as medições recebidas, sem afirmar frequência garantida, precisão de instrumentos originais ou limite real do motor.
 
 Os comandos executados, o resultado real da compilação e dos testes (76 aprovados em 11/11/2026), o que já foi conferido no veículo e o que ainda falta validar estão em `VALIDATION.md`.
+
+## Planos futuros
+
+### Gravação de sessões ao dirigir (versão 1.2.00)
+
+Gravar uma sessão de até 30 minutos dirigindo, para ver como os sensores se comportam em movimento e como o próprio aplicativo aguenta uma sessão longa. Hoje as duas coisas só foram medidas com o carro parado.
+
+**O que a gravação deve mostrar**
+
+- **O aplicativo:** frequência real de leitura em movimento, latência sob carga e quantas vezes houve timeout, reconexão ou leitura desatualizada.
+- **O motor:** pressão do coletor (turbo), avanço de ignição em carga, carga e borboleta, trims de combustível, sonda lambda, aquecimento do motor e do catalisador e tensão.
+- **Relações entre os dados:** velocidade e RPM juntos permitem deduzir a marcha engatada e ver o comportamento do câmbio.
+
+**Como deve funcionar**
+
+- Um botão **Gravar sessão** na aba Instrumentos, ligado antes de sair e desligado depois de estacionar, sem mexer no telefone ao dirigir. A gravação para sozinha após 30 minutos.
+- Durante a gravação o rodízio de pedidos é fixo, independente da aba aberta, sempre com no máximo 3 PIDs por pedido:
+  - velocidade e RPM (`010C0D`) em todo ciclo, cerca de 3 a 4 vezes por segundo;
+  - carga, borboleta, avanço, pressão do coletor e trims a cada 1 a 2 segundos;
+  - temperaturas e tensões a cada 10 segundos.
+- Um arquivo CSV com uma linha por leitura (`tempo_ms, sinal, valor, latência_ms`) e uma linha por erro (`NO DATA`, timeout, reconexão). Só entra o que foi lido, sem valores interpolados.
+- No começo do arquivo: versão do app, adaptador, protocolo e linha vermelha. **O VIN fica de fora.**
+- 15 minutos devem dar cerca de 15 mil leituras, por volta de 400 KB. O arquivo fica na pasta do aplicativo e sai pelo menu de compartilhar do Android ou pelo `adb`. O aplicativo continua sem permissão de internet e sem localização.
+
+**Análise**
+
+- Primeiro passo: o CSV é analisado fora do aplicativo, com gráficos de velocidade e RPM, turbo, avanço, trims, frequência e latência.
+- Segundo passo, se for útil: o painel web ganha um **Abrir gravação** com esses gráficos.
+
+**Limites conhecidos**
+
+- O aplicativo precisa ficar aberto na tela durante a gravação: hoje ele desconecta ao ir para segundo plano. Gravar com a tela apagada exigiria um serviço com notificação permanente.
+- Enquanto grava, velocidade e RPM caem de 5 Hz para cerca de 3 a 4 Hz, porque o adaptador divide o tempo com os outros sensores.
+- Não há GPS: a gravação mostra o tempo, não o trajeto.
